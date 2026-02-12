@@ -34,7 +34,8 @@ export default function CreateProfileBtn({ formData, validateForm, errors }) {
       const data = await response.json();
       console.log("Profile saved:", data);
 
-      router.push("/payment");
+      // Pass returnUrl so user can go back if they cancel payment
+      router.push("/payment?returnUrl=" + encodeURIComponent("/profile"));
     } catch (error) {
       console.error("Error saving profile:", error);
       alert("Error saving profile. Please try again.");
