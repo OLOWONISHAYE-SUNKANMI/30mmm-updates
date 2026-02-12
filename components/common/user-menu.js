@@ -45,17 +45,17 @@ export default function UserMenu({ mobile }) {
       // Perform server-side sign out
       await signOutAction();
 
-      // Refresh auth state from server
-      await refreshAuthState();
-
-      // Navigate to home
+      // Navigate to landing page first, before any refresh that might trigger redirects
       router.push("/");
+      
+      // Refresh page to clear all cached data and ensure clean state
       router.refresh();
     } catch (error) {
       console.error("Error logging out:", error);
 
-      // Refresh auth state to get current status
-      await refreshAuthState();
+      // Still redirect to landing page on error
+      router.push("/");
+      router.refresh();
     }
   };
 
