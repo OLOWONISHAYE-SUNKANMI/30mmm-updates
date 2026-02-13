@@ -7,7 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(request) {
   try {
-    const { amount, donationType, metadata, email, discountCode, paymentMethod } = await request.json();
+    const { amount, donationType, metadata, email, discountCode, paymentMethod, returnUrl } = await request.json();
 
     // Handle free signup with 100% discount
     if (amount === 0 && paymentMethod === "free_discount") {
@@ -68,7 +68,7 @@ export async function POST(request) {
       ],
       mode: donationType === "monthly" ? "subscription" : "payment",
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/donation/cancelled`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/donation/cancelled${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ""}`,
       metadata: {
         ...metadata,
         amount: amount.toString(),
