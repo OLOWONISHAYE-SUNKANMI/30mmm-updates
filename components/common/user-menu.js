@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { signOutAction } from "@/actions/auth";
 import { useAuth } from "@/contexts/AuthContext";
-import { ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { ChevronDown, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -96,13 +96,7 @@ export default function UserMenu({ mobile }) {
           <span>Profile</span>
         </Link>
 
-        <Link
-          href="/dashboard/settings"
-          className="flex items-center gap-2 rounded-md p-2 hover:bg-gray-100"
-        >
-          <Settings size={16} />
-          <span>Settings</span>
-        </Link>
+
 
         <button
           onClick={handleLogout}
@@ -164,15 +158,7 @@ export default function UserMenu({ mobile }) {
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
-          <Link
-            href="/dashboard/settings"
-            className="flex cursor-pointer items-center"
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </Link>
-        </DropdownMenuItem>
+
 
         <DropdownMenuSeparator />
 

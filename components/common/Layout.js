@@ -27,9 +27,7 @@ export default function Layout({ children }) {
           <Link href="/signin" legacyBehavior>
             <a style={{ marginRight: "20px", color: "#ecf0f1" }}>Sign In</a>
           </Link>
-          <Link href="/settings" legacyBehavior>
-            <a style={{ marginRight: "20px", color: "#ecf0f1" }}>Settings</a>
-          </Link>
+
           <Link href="/foundation" legacyBehavior>
             <a style={{ color: "#ecf0f1" }}>Foundation</a>
           </Link>
