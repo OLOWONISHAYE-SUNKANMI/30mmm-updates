@@ -7,7 +7,7 @@ import { filterVideosByUserProgress } from '@/lib/video-filtering-utility';
 const prisma = new PrismaClient();
 const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     // Get user session for progress filtering
     const session = await auth();
@@ -54,30 +54,57 @@ export async function GET() {
       if (!video.blobUrl) return video;
       
       try {
-        const url = new URL(video.blobUrl);
-        const pathParts = url.pathname.split('/').filter(Boolean);
+        const url = new URL(normalizedBlobUrl);
+        const pathParts = url.pathname
+          .split('/')
+          .filter(Boolean)
+          .map(part => decodeURIComponent(part)); // Decode each path component
         const containerName = pathParts[0];
         const blobName = pathParts.slice(1).join('/');
+        
+        console.log('Extracting blob path:', {
+          originalUrl: normalizedBlobUrl,
+          containerName,
+          blobName,
+          pathParts,
+        });
         
         const containerClient = blobServiceClient.getContainerClient(containerName);
         const blobClient = containerClient.getBlobClient(blobName);
         
-        const readUrl = blobClient.generateSasUrl({
+        const readUrl = await blobClient.generateSasUrl({
           permissions: BlobSASPermissions.parse('r'),
           expiresOn: new Date(Date.now() + 24 * 60 * 60 * 1000),
         });
         
+        console.log('Successfully generated SAS URL for video:', video.id);
         return { ...video, blobUrl: readUrl };
       } catch (error) {
-        console.error('Error generating read URL:', error);
+        console.error('Error generating read URL for video:', video.id, 'blob name:', video.fileName, error);
+        // Return with original normalized URL on error
         return video;
       }
-    });
+    }));
+
+    // Log what we're returning
+    console.log('Returning videos from API - Total:', videosWithReadUrls.length);
+    if (videosWithReadUrls.length > 0) {
+      const sample = videosWithReadUrls[0];
+      console.log('Sample video being returned:', {
+        id: sample.id,
+        fileName: sample.fileName,
+        blobUrl: sample.blobUrl,
+        blobUrlType: typeof sample.blobUrl,
+        blobUrlLength: sample.blobUrl ? sample.blobUrl.length : 0,
+      });
+    }
 
     return NextResponse.json(videosWithReadUrls);
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Error fetching videos:', error);
+    console.error('Error details:', error.message, error.stack);
     return NextResponse.json(
-      { error: 'Failed to fetch videos' },
+      { error: 'Failed to fetch videos', details: error.message },
       { status: 500 }
     );
   }

@@ -5,7 +5,7 @@
 import React, { use, useEffect, useState } from "react";
 import { getCurrentUserWithProgress } from "@/actions/dashboard";
 import { getDevotionalById } from "@/actions/devotional";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Divider from "@/components/common/Divider";
 import ReflectionProcessingForm from "@/components/Foundation/Devotional-v2/reflection-processing-form";
@@ -23,7 +23,7 @@ export default function Devotional({ params }) {
    * Hooks and contexts
    */
   const unwrappedParams = use(params);
-  const { data: session, status } = useSession();
+  const { authState } = useAuth();
   const router = useRouter();
   const devotionalId = unwrappedParams.id;
 
@@ -70,26 +70,28 @@ export default function Devotional({ params }) {
 
   useEffect(() => {
     const fetchUserProgress = async () => {
+      if (!authState.isAuthenticated) {
+        setUserProgressData(null);
+        return;
+      }
       try {
         const result = await getCurrentUserWithProgress();
 
         if (!result.success) {
           throw new Error(result.error || "Failed to get user data");
         }
-
         setUserProgressData(result);
       } catch (err) {
         console.error("Error loading user progress:", err);
-        setError(err.message);
       }
     };
     fetchUserProgress();
-  }, []);
+  }, [authState.isAuthenticated]);
 
   /**
    * Loading State
    */
-  if (status === "loading" || loading) {
+  if (authState.loading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p>Loading devotional...</p>
@@ -232,7 +234,7 @@ export default function Devotional({ params }) {
             <ReflectionProcessingForm
               devotionalDataId={devotionalData.id}
               devotionalNumberId={devotionalData.numberId}
-              userId={session?.user?.id}
+              userId={authState.user?.id}
               week={devotionalData.week}
               day={devotionalData.day}
               firstName={userProgressData?.user?.firstName}

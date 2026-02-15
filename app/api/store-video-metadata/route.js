@@ -1,10 +1,13 @@
 import prisma from "@/db";
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
 export async function POST(request) {
-  // creating a client
-  // connecting to MongoDB
   try {
+    const session = await auth();
+    const userId = session?.user?.id || null;
+    console.log('Storing video with userId:', userId);
+
     const {
       cohort,
       firstName,
@@ -16,8 +19,9 @@ export async function POST(request) {
       blobUrl,
     } = await request.json();
 
-    await prisma.videoUpload.create({
+    const video = await prisma.videoUpload.create({
       data: {
+        userId,
         cohort: parseInt(cohort),
         firstName,
         lastName,
@@ -28,6 +32,8 @@ export async function POST(request) {
         blobUrl,
       },
     });
+
+    console.log('Video created with ID:', video.id, 'userId:', video.userId);
 
     return NextResponse.json(
       {

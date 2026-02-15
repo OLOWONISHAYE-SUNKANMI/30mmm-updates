@@ -1,12 +1,12 @@
 import "@/app/globals.css";
 import Providers from "@/contexts/Providers";
-import { Alexandria } from "next/font/google";
+
 import Script from "next/script";
 import Footer from "@/components/common/Footer/Footer";
 import NavBar from "@/components/common/NavBar";
 import { Toaster } from "@/components/ui/sonner";
 
-const alexandria = Alexandria({ subsets: ["latin"], display: "swap" });
+
 
 export const metadata = {
   title: "CLEAN: A Thirty Mighty Men Ministries Program",
@@ -39,7 +39,7 @@ export default function RootLayout({ children }) {
           `}
         </Script>
       </head>
-      <body className={`${alexandria.className} antialiased`}>
+      <body className={`antialiased`}>
         <Providers>
           <NavBar />
           <main className="mt-16 sm:mt-20">{children}</main>
