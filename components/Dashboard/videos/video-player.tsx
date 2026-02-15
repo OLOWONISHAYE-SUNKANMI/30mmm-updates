@@ -44,9 +44,14 @@ export default function VideoPlayer() {
 
   // Progress state
   const [currentUserProgress, setCurrentUserProgress] = useState<{ week: number; day: number } | null>(null);
+  const errorHandledRef = useRef<Set<number>>(new Set());
+
+  // Progress state
+  const [currentUserProgress, setCurrentUserProgress] = useState<{ week: number; day: number } | null>(null);
 
   const shareVideo = async (platform: string) => {
     if (!currentVideo) return;
+
 
     const videoUrl = `${window.location.origin}/dashboard/videos?v=${currentVideo.id}`;
     const title = `Check out this video: Week ${currentVideo.week} Day ${currentVideo.day}`;
@@ -241,6 +246,159 @@ export default function VideoPlayer() {
 
     fetchVideosAndProgress();
   }, [authState.user?.id]);
+    const fetchVideosAndProgress = async () => {
+      setLoading(true);
+      try {
+        // 1. Fetch User Progress
+        let progressWeek = 1;
+        let progressDay = 1;
+
+        if (authState.user?.id) {
+          const progressRes = await getUserProgress(authState.user.id);
+          if (progressRes.success && progressRes.userProgress) {
+            const totalDays = progressRes.userProgress.currentDay || 1;
+            const { week, day } = calculateWeekAndDay(totalDays);
+            progressWeek = week;
+            progressDay = day;
+            setCurrentUserProgress({ week, day });
+          }
+        }
+
+        // 2. Fetch Videos
+        const res = await fetch('/api/videos');
+        if (!res.ok) {
+          console.error('Failed to fetch videos:', res.status, res.statusText);
+          setVideos([]);
+          return;
+        }
+
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+          console.error('Videos data is not an array:', data);
+          setVideos([]);
+          return;
+        }
+
+        console.log(`Total videos from API: ${data.length}`);
+
+        // Log first few videos to debug blobUrl format
+        if (data.length > 0) {
+          console.log('RAW Sample videos from API response:', data.slice(0, 3).map(v => ({
+            id: v.id,
+            fileName: v.fileName,
+            blobUrl: v.blobUrl,
+            blobUrlType: typeof v.blobUrl,
+            blobUrlIsString: typeof v.blobUrl === 'string',
+            blobUrlLength: typeof v.blobUrl === 'string' ? v.blobUrl.length : 'N/A',
+          })));
+        }
+
+        // Helper function to normalize blobUrl
+        const normalizeBlobUrl = (blobUrl: any): string => {
+          // Handle null/undefined
+          if (!blobUrl) return '';
+
+          // Already a valid string
+          if (typeof blobUrl === 'string') {
+            return blobUrl.length > 0 ? blobUrl : '';
+          }
+
+          // Handle object - might be serialization issue
+          if (typeof blobUrl === 'object') {
+            // Try common object properties that might contain the URL
+            if (blobUrl.url) return String(blobUrl.url);
+            if (blobUrl.href) return String(blobUrl.href);
+            if (blobUrl.value) return String(blobUrl.value);
+
+            // Try to get any string property
+            for (const key in blobUrl) {
+              const val = blobUrl[key];
+              if (typeof val === 'string' && val.length > 0) {
+                return val;
+              }
+            }
+
+            // Empty object - return empty string
+            return '';
+          }
+
+          // For any other type, try to convert to string
+          const strVal = String(blobUrl);
+          return strVal !== '[object Object]' ? strVal : '';
+        };
+
+        // Filter and process videos
+        const validVideos = data.filter(video => {
+          // Video must exist and have an ID
+          if (!video || !video.id) return false;
+
+          // Filter by Progress:
+          // Show if video week is less than current progress week
+          // OR if video week is equal to current progress week AND video day is less than or equal to current progress day
+          const videoWeek = video.week || 0;
+          const videoDay = video.day || 0;
+
+          const isReleased = videoWeek < progressWeek || (videoWeek === progressWeek && videoDay <= progressDay);
+          if (!isReleased) return false;
+
+
+          const normalizedBlobUrl = normalizeBlobUrl(video.blobUrl);
+
+          // Check if we have a valid blobUrl
+          const hasValidBlobUrl = normalizedBlobUrl.length > 0 &&
+            (normalizedBlobUrl.startsWith('http://') || normalizedBlobUrl.startsWith('https://'));
+
+          const hasFileName = !!video.fileName;
+
+          // Log videos that have issues
+          if (!hasValidBlobUrl && video.blobUrl) {
+            console.warn(`Video ${video.id} has problematic blobUrl - type: ${typeof video.blobUrl}, value:`, video.blobUrl, `fileName: ${video.fileName}`);
+          }
+
+          // Include video if it has either valid blobUrl or fileName
+          return hasValidBlobUrl || hasFileName;
+        }).map(video => {
+          // Normalize blobUrl to always be a string
+          const normalizedBlobUrl = normalizeBlobUrl(video.blobUrl);
+          return { ...video, blobUrl: normalizedBlobUrl };
+        }).sort((a, b) => {
+          // Sort by Week descending, then Day descending
+          if (b.week !== a.week) {
+            return b.week - a.week;
+          }
+          return b.day - a.day;
+        });
+
+        console.log(`Loaded ${validVideos.length} valid and released videos from ${data.length} total`);
+
+        if (validVideos.length === 0 && data.length > 0) {
+          console.warn('No valid videos after filtering.');
+          console.warn('First 3 videos:', data.slice(0, 3).map(v => ({
+            id: v.id,
+            fileName: v.fileName,
+            blobUrl: v.blobUrl,
+          })));
+        }
+
+        setVideos(validVideos);
+
+        // Initialize stats for each valid video
+        const initialStats: { [key: string]: { likes: number; comments: number } } = {};
+        validVideos.forEach(video => {
+          initialStats[video.id] = { likes: 0, comments: 0 };
+        });
+        setVideoStats(initialStats);
+      } catch (err) {
+        console.error('Error fetching videos:', err);
+        setVideos([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVideosAndProgress();
+  }, [authState.user?.id]);
 
   // Initialize video refs array
   useEffect(() => {
@@ -250,6 +408,24 @@ export default function VideoPlayer() {
   // Handle video playback when changing videos
   useEffect(() => {
     if (videos.length === 0) return;
+
+    const currentRef = videoRefs.current[currentVideoIndex];
+    if (currentRef) {
+      const playPromise = currentRef.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') {
+            console.error("Error playing video:", err);
+          }
+        });
+      }
+    }
+
+    // Pause other videos
+    videoRefs.current.forEach((videoRef, index) => {
+      if (videoRef && index !== currentVideoIndex) {
+        videoRef.pause();
+        videoRef.currentTime = 0;
 
     const currentRef = videoRefs.current[currentVideoIndex];
     if (currentRef) {
@@ -286,6 +462,7 @@ export default function VideoPlayer() {
 
     const userId = currentUser.name || 'Anonymous';
 
+
     try {
       const response = await fetch('/api/video-stats', {
         method: 'POST',
@@ -294,11 +471,13 @@ export default function VideoPlayer() {
       });
       const result = await response.json();
 
+
       if (result.liked) {
         setLikedVideos(prev => [...prev, videoId]);
       } else {
         setLikedVideos(prev => prev.filter(id => id !== videoId));
       }
+
 
       // Update stats
       setVideoStats(prev => ({
@@ -410,6 +589,19 @@ export default function VideoPlayer() {
     );
   }
 
+  const validVideos = videos.filter(video => !brokenVideoIds.has(video.id));
+
+  if (validVideos.length === 0) {
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-[900px] flex-col items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 text-lg font-medium">No videos available</p>
+          <p className="text-gray-500 text-sm mt-2">Videos will appear here once they are uploaded.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <TooltipProvider>
       <div className="mx-auto flex min-h-screen w-full max-w-[900px] flex-col px-2 xs:px-3 sm:px-4 md:px-6">
@@ -438,8 +630,39 @@ export default function VideoPlayer() {
                     muted={isMuted}
                     controls={true}
                     preload="metadata"
+                    preload="metadata"
                     aria-label={`Video: Week ${video.week} Day ${video.day}`}
                     onError={(e) => {
+                      const videoId = video.id;
+
+                      // Prevent duplicate error handling
+                      if (errorHandledRef.current.has(videoId)) return;
+                      errorHandledRef.current.add(videoId);
+
+                      const error = e.currentTarget.error;
+                      console.warn(`Video error for ${videoId}:`, {
+                        code: error?.code,
+                        message: error?.message,
+                        blobUrl: video.blobUrl,
+                      });
+
+                      setBrokenVideoIds(prev => {
+                        const newSet = new Set(prev);
+                        newSet.add(videoId);
+                        return newSet;
+                      });
+                    }}
+                  />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center bg-gray-100 flex-col gap-3">
+                    <p className="text-gray-600 font-semibold">Video Cannot Load</p>
+                    <p className="text-gray-500 text-sm">
+                      {video.fileName ? `File: ${video.fileName}` : 'No video file available'}
+                    </p>
+                    <p className="text-gray-400 text-xs max-w-xs text-center">
+                      {video.blobUrl ? `URL: ${video.blobUrl.substring(0, 100)}...` : 'No URL provided'}
+                    </p>
+                  </div>
                       const videoId = video.id;
 
                       // Prevent duplicate error handling
@@ -506,12 +729,18 @@ export default function VideoPlayer() {
               role="tablist"
               aria-label="Video navigation"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
+              {validVideos.map((video, index) => (
               {validVideos.map((video, index) => (
                 <Tooltip key={index}>
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => setCurrentVideoIndex(index)}
+                      className={`h-1.5 xs:h-2 sm:h-3 w-4 xs:w-6 sm:w-10 rounded-full transition-all duration-200 flex-shrink-0 ${index === currentVideoIndex
+                        ? "bg-gray-800"
+                        : "bg-gray-300 hover:bg-gray-500"
+                        }`}
                       className={`h-1.5 xs:h-2 sm:h-3 w-4 xs:w-6 sm:w-10 rounded-full transition-all duration-200 flex-shrink-0 ${index === currentVideoIndex
                         ? "bg-gray-800"
                         : "bg-gray-300 hover:bg-gray-500"
@@ -562,6 +791,15 @@ export default function VideoPlayer() {
                 {currentVideo?.firstName} {currentVideo?.lastName} • Cohort {currentVideo?.cohort}
               </div>
             </div>
+            {/* Video Title and Info */}
+            <div className="text-center px-2">
+              <div className="text-base xs:text-lg sm:text-xl md:text-2xl font-bold leading-tight text-gray-800">
+                Week {currentVideo?.week} Day {currentVideo?.day}
+              </div>
+              <div className="mt-1 sm:mt-2 text-xs xs:text-sm sm:text-base text-gray-600">
+                {currentVideo?.firstName} {currentVideo?.lastName} • Cohort {currentVideo?.cohort}
+              </div>
+            </div>
 
             {/* Video Controls and Profile */}
             <div className="flex items-center justify-between flex-wrap gap-2 px-2">
@@ -585,7 +823,41 @@ export default function VideoPlayer() {
                   <p>{isMuted ? "Unmute" : "Mute"}</p>
                 </TooltipContent>
               </Tooltip>
+            {/* Video Controls and Profile */}
+            <div className="flex items-center justify-between flex-wrap gap-2 px-2">
+              {/* Mute/Unmute button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleMute}
+                    className="rounded-full px-2 xs:px-3 sm:px-4 py-1 sm:py-2 text-xs xs:text-sm"
+                    aria-label={isMuted ? "Unmute video" : "Mute video"}
+                  >
+                    {isMuted ? <VolumeX size={14} className="xs:w-4 xs:h-4 sm:w-[18px] sm:h-[18px]" /> : <Volume2 size={14} className="xs:w-4 xs:h-4 sm:w-[18px] sm:h-[18px]" />}
+                    <span className="ml-1 sm:ml-2">
+                      {isMuted ? "Unmute" : "Mute"}
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isMuted ? "Unmute" : "Mute"}</p>
+                </TooltipContent>
+              </Tooltip>
 
+              {/* Profile */}
+              <div className="flex items-center gap-1 xs:gap-2 sm:gap-3">
+                <Avatar className="h-6 w-6 xs:h-8 xs:w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-2 border-gray-300">
+                  <AvatarFallback className="text-xs xs:text-sm">
+                    {currentVideo?.firstName?.[0]}{currentVideo?.lastName?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-xs xs:text-sm text-gray-600">
+                  {currentVideo?.firstName} {currentVideo?.lastName}
+                </div>
+              </div>
+            </div>
               {/* Profile */}
               <div className="flex items-center gap-1 xs:gap-2 sm:gap-3">
                 <Avatar className="h-6 w-6 xs:h-8 xs:w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 border-2 border-gray-300">
@@ -791,8 +1063,8 @@ export default function VideoPlayer() {
               </div>
             </div>
 
-          <div className="text-center text-gray-500 text-sm">
-            Video {currentVideoIndex + 1} of {videos.length}
+          <div className="text-center text-gray-500 text-xs xs:text-sm px-2">
+            Video {currentVideoIndex + 1} of {videos.filter(video => !brokenVideoIds.has(video.id)).length}
           </div>
 
             {/* Comments Section */}

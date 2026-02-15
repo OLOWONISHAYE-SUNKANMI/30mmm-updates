@@ -6,6 +6,7 @@ import React, { use, useEffect, useState } from "react";
 import { getCurrentUserWithProgress } from "@/actions/dashboard";
 import { getDevotionalById } from "@/actions/devotional";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Divider from "@/components/common/Divider";
 import ReflectionProcessingForm from "@/components/Foundation/Devotional-v2/reflection-processing-form";
@@ -70,6 +71,10 @@ export default function Devotional({ params }) {
 
   useEffect(() => {
     const fetchUserProgress = async () => {
+      if (!authState.isAuthenticated) {
+        setUserProgressData(null);
+        return;
+      }
       if (!authState.isAuthenticated) {
         setUserProgressData(null);
         return;

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signOutAction } from "@/actions/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChevronDown, LogOut, User } from "lucide-react";
+import { ChevronDown, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
