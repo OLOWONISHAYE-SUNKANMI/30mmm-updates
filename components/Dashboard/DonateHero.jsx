@@ -60,6 +60,7 @@ export default function DonateHero({ onClick }) {
         body: JSON.stringify({
           amount: finalAmount,
           donationType: donationType,
+          returnUrl: "/dashboard", // Return to dashboard if user cancels
           // Add any additional metadata you need
           metadata: {
             program: "The Clean Program",
@@ -71,6 +72,8 @@ export default function DonateHero({ onClick }) {
       const { url } = await response.json();
 
       if (url) {
+        // Push to history to ensure back button works properly
+        window.history.pushState({ returnUrl: "/dashboard" }, "", window.location.href);
         // Redirect to Stripe Checkout
         window.location.href = url;
       } else {

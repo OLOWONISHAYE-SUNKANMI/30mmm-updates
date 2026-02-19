@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { signOutAction } from "@/actions/auth";
+import { signOut } from "next-auth/react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ChevronDown, LogOut, User } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,9 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function UserMenu({ mobile }) {
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const { authState, setAuthState, refreshAuthState } = useAuth();
+  const { authState, setAuthState } = useAuth();
 
   // At this point, we know user is authenticated (dashboard handles the checks)
   const userInfo = authState.user;
@@ -30,33 +28,19 @@ export default function UserMenu({ mobile }) {
   }
 
   // Handle logout
-  const handleLogout = async () => {
-    try {
-      console.log("Logging out...");
+  const handleLogout = () => {
+    console.log("Logging out...");
 
-      // Set signing out flag to differentiate from initial loading
-      setAuthState({
-        isAuthenticated: false,
-        user: null,
-        loading: true,
-        signingOut: true,
-      });
+    // Set signing out flag to differentiate from initial loading
+    setAuthState({
+      isAuthenticated: false,
+      user: null,
+      loading: true,
+      signingOut: true,
+    });
 
-      // Perform server-side sign out
-      await signOutAction();
-
-      // Refresh auth state from server
-      await refreshAuthState();
-
-      // Navigate to home
-      router.push("/");
-      router.refresh();
-    } catch (error) {
-      console.error("Error logging out:", error);
-
-      // Refresh auth state to get current status
-      await refreshAuthState();
-    }
+    // Use signOut with callbackUrl to redirect to landing page
+    signOut({ callbackUrl: "/" });
   };
 
   // Get initials for avatar fallback
