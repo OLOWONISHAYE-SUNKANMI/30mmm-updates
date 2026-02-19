@@ -40,6 +40,13 @@ export default function DashboardProvider({ children }) {
       const result = await getCurrentUserWithProgress();
 
       if (!result.success) {
+        // If not authenticated, silently set to unauthenticated state
+        if (result.error === "Not authenticated") {
+          setUserInfo(null);
+          setUserProgress(null);
+          setLoading(false);
+          return;
+        }
         throw new Error(result.error || "Failed to get user data");
       }
 
@@ -57,8 +64,9 @@ export default function DashboardProvider({ children }) {
       // Set progress info with proper null safety and defaults
       if (progress) {
         setUserProgress({
-          currentWeek: progress.currentWeek.toString(),
-          currentDay: progress.currentDay.toString(),
+
+          currentWeek: progress.currentWeek,
+          currentDay: progress.currentDay,
           currentDayTitle: progress.currentDayTitle || "Day 1",
           currentWeekTitle: progress.currentWeekTitle || "Week 1",
           currentDevotionalID: progress.currentDevotionalId || null,
@@ -75,8 +83,8 @@ export default function DashboardProvider({ children }) {
       } else {
         // Set default progress if none exists
         setUserProgress({
-          currentWeek: "1",
-          currentDay: "1",
+          currentWeek: 1,
+          currentDay: 1,
           currentDayTitle: "Day 1",
           currentWeekTitle: "Week 1",
           startDate: new Date(),

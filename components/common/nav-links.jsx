@@ -20,7 +20,6 @@ const INTERNAL_NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/videos", label: "Videos" },
   { href: "/dashboard/profile", label: "Profile" },
-  { href: "/dashboard/settings", label: "Settings" },
 ];
 
 export default function NavLinks({

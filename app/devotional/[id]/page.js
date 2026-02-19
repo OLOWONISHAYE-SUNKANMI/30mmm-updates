@@ -5,7 +5,7 @@
 import React, { use, useEffect, useState } from "react";
 import { getCurrentUserWithProgress } from "@/actions/dashboard";
 import { getDevotionalById } from "@/actions/devotional";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Divider from "@/components/common/Divider";
 import ReflectionProcessingForm from "@/components/Foundation/Devotional-v2/reflection-processing-form";
@@ -23,7 +23,7 @@ export default function Devotional({ params }) {
    * Hooks and contexts
    */
   const unwrappedParams = use(params);
-  const { data: session, status } = useSession();
+  const { authState } = useAuth();
   const router = useRouter();
   const devotionalId = unwrappedParams.id;
 
@@ -70,27 +70,31 @@ export default function Devotional({ params }) {
 
   useEffect(() => {
     const fetchUserProgress = async () => {
+      if (!authState.isAuthenticated) {
+        setUserProgressData(null);
+        return;
+      }
       try {
         const result = await getCurrentUserWithProgress();
-        setUserProgressData(result);
-
+        if (!result.success && result.error === "Not authenticated") {
+          setUserProgressData(null);
+          return;
+        }
         if (!result.success) {
           throw new Error(result.error);
         }
-
         setUserProgressData(result);
       } catch (err) {
         console.error("Error loading user progress:", err);
-        setError(err.message);
       }
     };
     fetchUserProgress();
-  }, []);
+  }, [authState.isAuthenticated]);
 
   /**
    * Loading State
    */
-  if (status === "loading" || loading) {
+  if (authState.loading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p>Loading devotional...</p>
@@ -145,16 +149,16 @@ export default function Devotional({ params }) {
    */
 
   return (
-    <div className="mt-16 flex w-full flex-col justify-between px-2 py-2 md:px-4 md:py-4 lg:px-[1vw] lg:py-[1vh]">
-      <div className="mt-8 flex flex-col items-center">
-        <div className="lg:max-w-10xl flex flex-col md:max-w-7xl">
+    <div className="mt-16 flex w-full flex-col justify-between px-4 py-4 sm:px-6 md:px-8 lg:px-12">
+      <div className="mt-4 sm:mt-6 md:mt-8 flex flex-col items-center">
+        <div className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl">
           {/* Back Button */}
           <button
             onClick={() => router.push("/dashboard")}
-            className="group mb-6 flex items-center gap-2 self-start rounded-lg px-4 py-2 text-gray-700 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
+            className="group mb-4 sm:mb-6 flex items-center gap-2 self-start rounded-lg px-3 py-2 sm:px-4 text-sm sm:text-base text-gray-700 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
           >
             <svg
-              className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-1"
+              className="h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-200 group-hover:-translate-x-1"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -170,8 +174,8 @@ export default function Devotional({ params }) {
             <span className="font-medium">Back to Dashboard</span>
           </button>
 
-          <div className="mb-8 flex flex-col items-start bg-white md:flex-col">
-            <div className="mt-[3vh]">
+          <div className="mb-6 sm:mb-8 flex flex-col items-start bg-white">
+            <div className="mt-4 sm:mt-6 md:mt-8 w-full">
               <Title
                 weekTitle={devotionalData.weekTitle}
                 dayTitle={devotionalData.dayTitle}
@@ -179,37 +183,37 @@ export default function Devotional({ params }) {
               />
             </div>
 
-            <div className="mb-[2vh] mt-[1vh]">
+            <div className="mb-3 sm:mb-4 md:mb-6 mt-2 sm:mt-3 md:mt-4 w-full">
               <SubTitle
                 week={devotionalData.week}
                 day={devotionalData.day}
               />
             </div>
 
-            <div className="flex w-full justify-center">
-              <div className="flex items-center justify-center">
+            <div className="flex w-full justify-center mb-4 sm:mb-6">
+              <div className="flex items-center justify-center w-full">
                 <MainImage videoId={devotionalData.videoId} />
               </div>
             </div>
 
-            <div className="flex w-full justify-center">
+            <div className="flex w-full justify-center mb-4 sm:mb-6">
               <Quotes />
             </div>
 
-            <div className="mb-[3vh] flex w-full justify-center">
+            <div className="mb-4 sm:mb-6 md:mb-8 flex w-full justify-center">
               <ScripturesSection scriptures={devotionalData.Scriptures} />
             </div>
 
-            <div className="justify-left mt-[1vh] flex w-full">
+            <div className="mt-2 sm:mt-3 md:mt-4 flex w-full">
               <ReadingTime devotionText={devotionalData.devotionText || ""} />
             </div>
 
-            <div className="justify-left wfull mt-[3vh] flex">
+            <div className="mt-4 sm:mt-6 md:mt-8 flex w-full">
               <MainLesson devotionText={devotionalData.devotionText || ""} />
             </div>
 
             <div className="flex w-full flex-col items-center">
-              <div className="mt-[6vh] flex w-full justify-center">
+              <div className="mt-6 sm:mt-8 md:mt-12 flex w-full justify-center">
                 <ReflectionBox
                   reflectionQuestion={devotionalData.reflectionQuestion}
                 />
@@ -222,7 +226,7 @@ export default function Devotional({ params }) {
             <ReflectionProcessingForm
               devotionalDataId={devotionalData.id}
               devotionalNumberId={devotionalData.numberId}
-              userId={session?.user?.id}
+              userId={authState.user?.id}
               week={devotionalData.week}
               day={devotionalData.day}
               firstName={userProgressData?.user?.firstName}
