@@ -25,8 +25,11 @@ export const authConfig = {
       async authorize(credentials) {
         try {
           if (!credentials?.email || !credentials?.password) {
-            throw new Error("Missing credentials");
+            console.log("Missing credentials");
+            return null;
           }
+
+          console.log("Attempting to authenticate user:", credentials.email);
 
           // Find user in the database
           const user = await prisma.user.findUnique({
@@ -35,12 +38,28 @@ export const authConfig = {
 
           // If no user found
           if (!user) {
+            console.log("User not found:", credentials.email);
             return null;
           }
-          //  if password doesn't match
-          if (!(await compare(credentials.password, user.password))) {
+
+          console.log("User found:", user.email, "Has password:", !!user.password);
+
+          // If user doesn't have a password (OAuth user)
+          if (!user.password) {
+            console.log("User exists but uses OAuth login");
             return null;
           }
+
+          // If password doesn't match
+          const passwordMatch = await compare(credentials.password as string, user.password);
+          console.log("Password match:", passwordMatch);
+          
+          if (!passwordMatch) {
+            console.log("Invalid password for user:", credentials.email);
+            return null;
+          }
+
+          console.log("Authentication successful for:", user.email);
 
           // Return the user object without sensitive data
           return {

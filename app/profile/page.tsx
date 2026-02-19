@@ -8,13 +8,15 @@ import * as validators from "./form-validators";
 
 export default function Profile() {
   const [firstTabActive, setFirstTabActive] = useState(true);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [errors, setErrors] = useState({
     firstName: "",
     lastName: "",
-    birthdate: "",
+    birthDate: "",
     maritalStatus: "",
     email: "",
-    telephone: "",
+    phoneNumber: "",
     address: "",
     city: "",
     state: "",
@@ -23,26 +25,38 @@ export default function Profile() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    birthdate: "",
+    birthDate: "",
     maritalStatus: "",
     childrenCount: "",
     churchAffiliation: "",
     email: "",
-    telephone: "",
+    phoneNumber: "",
     address: "",
     city: "",
     state: "",
     zipcode: "",
   });
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfileImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {
       firstName: validators.validateFirstName(formData.firstName),
       lastName: validators.validateLastName(formData.lastName),
-      birthdate: validators.validateBirthdate(formData.birthdate),
+      birthDate: validators.validateBirthdate(formData.birthDate),
       maritalStatus: validators.validateMaritalStatus(formData.maritalStatus),
       email: validators.validateEmail(formData.email),
-      telephone: validators.validateTelephone(formData.telephone),
+      phoneNumber: validators.validateTelephone(formData.phoneNumber),
       address: validators.validateAddress(formData.address),
       city: validators.validateCity(formData.city),
       state: validators.validateState(formData.state),
@@ -74,7 +88,7 @@ export default function Profile() {
       case "lastName":
         errorMessage = validators.validateLastName(value);
         break;
-      case "birthdate":
+      case "birthDate":
         errorMessage = validators.validateBirthdate(value);
         break;
       case "maritalStatus":
@@ -83,7 +97,7 @@ export default function Profile() {
       case "email":
         errorMessage = validators.validateEmail(value);
         break;
-      case "telephone":
+      case "phoneNumber":
         errorMessage = validators.validateTelephone(value);
         break;
       case "address":
@@ -111,7 +125,7 @@ export default function Profile() {
     const firstTabErrors = {
       firstName: validators.validateFirstName(formData.firstName),
       lastName: validators.validateLastName(formData.lastName),
-      birthdate: validators.validateBirthdate(formData.birthdate),
+      birthDate: validators.validateBirthdate(formData.birthDate),
       maritalStatus: validators.validateMaritalStatus(formData.maritalStatus),
     };
 
@@ -154,21 +168,47 @@ export default function Profile() {
           Create Your Profile
         </h1>
 
+        {/* Profile Picture Upload */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="relative">
+            {imagePreview ? (
+              <img
+                src={imagePreview}
+                alt="Profile Preview"
+                className="size-20 rounded-full object-cover"
+              />
+            ) : (
+              <div className="grid size-20 items-center justify-center rounded-full bg-gray-200">
+                <svg className="size-10 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+              </div>
+            )}
+          </div>
+          <label className="cursor-pointer text-sm font-semibold text-primary-red hover:scale-95">
+            Upload Picture
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+          </label>
+        </div>
+
         {/* Tab Selector */}
         <div className="my-mx-52 md: my items-stetch mx-10 inline-flex min-h-max flex-row justify-between gap-x-3 rounded-3xl bg-gray-bg text-center md:overflow-y-hidden">
           <button
             onClick={() => setFirstTabActive(true)}
-            className={`h-full w-full text-nowrap rounded-3xl py-2 pe-2 ps-4 text-base font-light hover:bg-almost-black hover:font-medium hover:text-white active:bg-almost-black active:font-medium active:text-white ${
-              firstTabActive ? "bg-almost-black font-medium text-white" : ""
-            }`}
+            className={`h-full w-full text-nowrap rounded-3xl py-2 pe-2 ps-4 text-base font-light hover:bg-almost-black hover:font-medium hover:text-white active:bg-almost-black active:font-medium active:text-white ${firstTabActive ? "bg-almost-black font-medium text-white" : ""
+              }`}
           >
             Personal Information
           </button>
           <button
             onClick={() => setFirstTabActive(false)}
-            className={`h-full w-full text-nowrap rounded-3xl py-2 pe-4 ps-3 text-base font-light hover:bg-almost-black hover:font-medium hover:text-white active:bg-almost-black active:font-medium active:text-white ${
-              firstTabActive ? "" : "bg-almost-black font-medium text-white"
-            }`}
+            className={`h-full w-full text-nowrap rounded-3xl py-2 pe-4 ps-3 text-base font-light hover:bg-almost-black hover:font-medium hover:text-white active:bg-almost-black active:font-medium active:text-white ${firstTabActive ? "" : "bg-almost-black font-medium text-white"
+              }`}
           >
             Address
           </button>
@@ -187,9 +227,8 @@ export default function Profile() {
                   name="firstName"
                   onChange={handleChange}
                   value={formData.firstName}
-                  className={`mt-1 block w-full rounded-xl border-transparent bg-blue-50/75 focus:border-white focus:bg-blue-50/50 focus:shadow-md focus:ring-0 ${
-                    errors.firstName ? "bg-red-50/75 ring-2 ring-red-500" : ""
-                  }`}
+                  className={`mt-1 block w-full rounded-xl border-transparent bg-blue-50/75 focus:border-white focus:bg-blue-50/50 focus:shadow-md focus:ring-0 ${errors.firstName ? "bg-red-50/75 ring-2 ring-red-500" : ""
+                    }`}
                   placeholder="First Name"
                 />
                 <ErrorMessage error={errors.firstName} />
@@ -204,29 +243,27 @@ export default function Profile() {
                   name="lastName"
                   onChange={handleChange}
                   value={formData.lastName}
-                  className={`mt-1 block w-full rounded-xl border-transparent bg-blue-50/75 focus:border-white focus:bg-blue-50/50 focus:shadow-md focus:ring-0 ${
-                    errors.lastName ? "bg-red-50/75 ring-2 ring-red-500" : ""
-                  }`}
+                  className={`mt-1 block w-full rounded-xl border-transparent bg-blue-50/75 focus:border-white focus:bg-blue-50/50 focus:shadow-md focus:ring-0 ${errors.lastName ? "bg-red-50/75 ring-2 ring-red-500" : ""
+                    }`}
                   placeholder="Last Name"
                 />
                 <ErrorMessage error={errors.lastName} />
               </label>
 
               <label
-                htmlFor="birthdate"
+                htmlFor="birthDate"
                 className="mx-8 block"
               >
                 <input
                   type="date"
-                  name="birthdate"
+                  name="birthDate"
                   onChange={handleChange}
-                  value={formData.birthdate}
-                  className={`mt-1 block w-full rounded-xl border-transparent bg-blue-50/75 focus:border-white focus:bg-blue-50/50 focus:shadow-md focus:ring-0 ${
-                    errors.birthdate ? "bg-red-50/75 ring-2 ring-red-500" : ""
-                  }`}
+                  value={formData.birthDate}
+                  className={`mt-1 block w-full rounded-xl border-transparent bg-blue-50/75 focus:border-white focus:bg-blue-50/50 focus:shadow-md focus:ring-0 ${errors.birthDate ? "bg-red-50/75 ring-2 ring-red-500" : ""
+                    }`}
                   placeholder="Birthdate"
                 />
-                <ErrorMessage error={errors.birthdate} />
+                <ErrorMessage error={errors.birthDate} />
               </label>
 
               <label
@@ -237,11 +274,10 @@ export default function Profile() {
                   name="maritalStatus"
                   onChange={handleChange}
                   value={formData.maritalStatus}
-                  className={`mt-1 block w-full rounded-xl border-transparent bg-blue-50/75 focus:border-white focus:bg-blue-50/50 focus:shadow-md focus:ring-0 ${
-                    errors.maritalStatus
-                      ? "bg-red-50/75 ring-2 ring-red-500"
-                      : ""
-                  }`}
+                  className={`mt-1 block w-full rounded-xl border-transparent bg-blue-50/75 focus:border-white focus:bg-blue-50/50 focus:shadow-md focus:ring-0 ${errors.maritalStatus
+                    ? "bg-red-50/75 ring-2 ring-red-500"
+                    : ""
+                    }`}
                 >
                   <option
                     value=""
@@ -289,18 +325,18 @@ export default function Profile() {
                 <ErrorMessage error={errors.email} />
               </label>
               <label
-                htmlFor="telephone"
+                htmlFor="phoneNumber"
                 className="mx-8 block"
               >
                 <input
                   type="tel"
-                  name="telephone"
+                  name="phoneNumber"
                   onChange={handleChange}
-                  value={formData.telephone}
+                  value={formData.phoneNumber}
                   className="mt-1 block w-full rounded-xl border-transparent bg-blue-50/75 focus:border-white focus:bg-blue-50/50 focus:shadow-md focus:ring-0"
                   placeholder="Phone Number"
                 />
-                <ErrorMessage error={errors.telephone} />
+                <ErrorMessage error={errors.phoneNumber} />
               </label>
               <label
                 htmlFor="address"
@@ -363,6 +399,7 @@ export default function Profile() {
                   formData={formData}
                   validateForm={validateForm}
                   errors={errors}
+                  profileImage={profileImage}
                 />
               </div>
             </>

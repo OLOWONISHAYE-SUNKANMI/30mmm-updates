@@ -243,6 +243,7 @@ model VideoUpload {
   fileName  String
   fileType  String
   blobUrl   String
+  isPublic  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
