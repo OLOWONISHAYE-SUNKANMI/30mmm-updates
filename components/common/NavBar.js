@@ -11,7 +11,7 @@ import MobileNavBar from "./mobile-nav-bar";
 const INTERNAL_PAGES = [
   "/dashboard",
   "/dashboard/profile",
-  "/dashboard/settings",
+  // "/dashboard/settings",
   "/dashboard/videos",
 ];
 

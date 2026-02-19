@@ -205,6 +205,9 @@ const DonationPage: React.FC<DonationPageProps> = ({
         throw new Error("No session URL returned from server");
       }
 
+      // Push to history to ensure back button works properly
+      window.history.pushState({ returnUrl: returnUrl || "/dashboard" }, "", window.location.href);
+
       // Redirect to Stripe Checkout
       window.location.href = sessionUrl;
     } catch (error) {

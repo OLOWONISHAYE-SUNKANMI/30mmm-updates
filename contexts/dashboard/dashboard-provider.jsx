@@ -40,6 +40,13 @@ export default function DashboardProvider({ children }) {
       const result = await getCurrentUserWithProgress();
 
       if (!result.success) {
+        // If not authenticated, silently set to unauthenticated state
+        if (result.error === "Not authenticated") {
+          setUserInfo(null);
+          setUserProgress(null);
+          setLoading(false);
+          return;
+        }
         throw new Error(result.error || "Failed to get user data");
       }
 

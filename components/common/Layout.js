@@ -21,16 +21,25 @@ export default function Layout({ children }) {
           height={100}
         />
         <nav style={{ marginTop: "20px" }}>
-          <Link href="/" legacyBehavior>
+          <Link
+            href="/"
+            legacyBehavior
+          >
             <a style={{ marginRight: "20px", color: "#ecf0f1" }}>Home</a>
           </Link>
-          <Link href="/signin" legacyBehavior>
+          <Link
+            href="/signin"
+            legacyBehavior
+          >
             <a style={{ marginRight: "20px", color: "#ecf0f1" }}>Sign In</a>
           </Link>
-          <Link href="/settings" legacyBehavior>
+          {/* <Link href="/settings" legacyBehavior>
             <a style={{ marginRight: "20px", color: "#ecf0f1" }}>Settings</a>
-          </Link>
-          <Link href="/foundation" legacyBehavior>
+          </Link> */}
+          <Link
+            href="/foundation"
+            legacyBehavior
+          >
             <a style={{ color: "#ecf0f1" }}>Foundation</a>
           </Link>
         </nav>

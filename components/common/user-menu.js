@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { signOutAction } from "@/actions/auth";
 import { useAuth } from "@/contexts/AuthContext";
-import { ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { ChevronDown, LogOut, User } from "lucide-react";
+import { signOut } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,9 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function UserMenu({ mobile }) {
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const { authState, setAuthState, refreshAuthState } = useAuth();
+  const { authState, setAuthState } = useAuth();
 
   // At this point, we know user is authenticated (dashboard handles the checks)
   const userInfo = authState.user;
@@ -30,33 +28,19 @@ export default function UserMenu({ mobile }) {
   }
 
   // Handle logout
-  const handleLogout = async () => {
-    try {
-      console.log("Logging out...");
+  const handleLogout = () => {
+    console.log("Logging out...");
 
-      // Set signing out flag to differentiate from initial loading
-      setAuthState({
-        isAuthenticated: false,
-        user: null,
-        loading: true,
-        signingOut: true,
-      });
+    // Set signing out flag to differentiate from initial loading
+    setAuthState({
+      isAuthenticated: false,
+      user: null,
+      loading: true,
+      signingOut: true,
+    });
 
-      // Perform server-side sign out
-      await signOutAction();
-
-      // Navigate to landing page first, before any refresh that might trigger redirects
-      router.push("/");
-      
-      // Refresh page to clear all cached data and ensure clean state
-      router.refresh();
-    } catch (error) {
-      console.error("Error logging out:", error);
-
-      // Still redirect to landing page on error
-      router.push("/");
-      router.refresh();
-    }
+    // Use signOut with callbackUrl to redirect to landing page
+    signOut({ callbackUrl: "/" });
   };
 
   // Get initials for avatar fallback
@@ -96,13 +80,13 @@ export default function UserMenu({ mobile }) {
           <span>Profile</span>
         </Link>
 
-        <Link
+        {/* <Link
           href="/dashboard/settings"
           className="flex items-center gap-2 rounded-md p-2 hover:bg-gray-100"
         >
           <Settings size={16} />
           <span>Settings</span>
-        </Link>
+        </Link> */}
 
         <button
           onClick={handleLogout}
@@ -164,7 +148,7 @@ export default function UserMenu({ mobile }) {
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
+        {/* <DropdownMenuItem asChild>
           <Link
             href="/dashboard/settings"
             className="flex cursor-pointer items-center"
@@ -172,7 +156,7 @@ export default function UserMenu({ mobile }) {
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
           </Link>
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
 
         <DropdownMenuSeparator />
 

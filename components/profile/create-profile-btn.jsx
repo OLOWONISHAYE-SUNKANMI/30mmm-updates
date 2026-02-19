@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function CreateProfileBtn({ formData, validateForm, errors }) {
+export default function CreateProfileBtn({ formData, validateForm, errors, profileImage }) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -19,13 +19,26 @@ export default function CreateProfileBtn({ formData, validateForm, errors }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/create-profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      // Use FormData if there's an image, otherwise use JSON
+      let response;
+      if (profileImage) {
+        const formDataToSend = new FormData();
+        formDataToSend.append("profileData", JSON.stringify(formData));
+        formDataToSend.append("profileImage", profileImage);
+        
+        response = await fetch("/api/create-profile", {
+          method: "POST",
+          body: formDataToSend,
+        });
+      } else {
+        response = await fetch("/api/create-profile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+      }
 
       if (!response.ok) {
         throw new Error("Failed to save profile");

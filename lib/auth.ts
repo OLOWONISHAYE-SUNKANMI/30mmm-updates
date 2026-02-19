@@ -9,8 +9,12 @@ export const authConfig = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || "",
+      clientId:
+        process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || "",
+      clientSecret:
+        process.env.GOOGLE_CLIENT_SECRET ||
+        process.env.AUTH_GOOGLE_SECRET ||
+        "",
     }),
     Credentials({
       name: "Credentials",
@@ -21,8 +25,11 @@ export const authConfig = {
       async authorize(credentials) {
         try {
           if (!credentials?.email || !credentials?.password) {
-            throw new Error("Missing credentials");
+            console.log("Missing credentials");
+            return null;
           }
+
+          console.log("Attempting to authenticate user:", credentials.email);
 
           // Find user in the database
           const user = await prisma.user.findUnique({
@@ -31,12 +38,28 @@ export const authConfig = {
 
           // If no user found
           if (!user) {
+            console.log("User not found:", credentials.email);
             return null;
           }
-          //  if password doesn't match
-          if (!(await compare(credentials.password, user.password))) {
+
+          console.log("User found:", user.email, "Has password:", !!user.password);
+
+          // If user doesn't have a password (OAuth user)
+          if (!user.password) {
+            console.log("User exists but uses OAuth login");
             return null;
           }
+
+          // If password doesn't match
+          const passwordMatch = await compare(credentials.password as string, user.password);
+          console.log("Password match:", passwordMatch);
+          
+          if (!passwordMatch) {
+            console.log("Invalid password for user:", credentials.email);
+            return null;
+          }
+
+          console.log("Authentication successful for:", user.email);
 
           // Return the user object without sensitive data
           return {
@@ -193,6 +216,7 @@ export const authConfig = {
   pages: {
     signIn: "/login",
     error: "/login", // Simplified error page
+    signOut: "/", // redirect to landing page
   },
 };
 
