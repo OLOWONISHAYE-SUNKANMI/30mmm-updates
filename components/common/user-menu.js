@@ -19,7 +19,6 @@ export default function UserMenu({ mobile }) {
   const [isOpen, setIsOpen] = useState(false);
   const { authState, setAuthState } = useAuth();
 
-  // At this point, we know user is authenticated (dashboard handles the checks)
   const userInfo = authState.user;
 
   // Add null check to prevent errors during initial render
