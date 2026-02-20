@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { createFeedback } from "@/actions/feedback";
 import { ChevronUp, Map, Plus } from "lucide-react";
 import {
   Select,
@@ -41,6 +42,7 @@ export default function Page() {
     },
   ]);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [value, setValue] = useState("all");
 
   // 2. State for managing the modal and form data
@@ -76,24 +78,31 @@ export default function Page() {
   };
 
   // 5. Handle the actual form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    const newFeedback = {
-      id: Date.now().toString(), // Simple ID generation
+    // Call the server action
+    const response = await createFeedback({
       title: formData.title,
       text: formData.text,
       type: formData.type,
-      createdAt: new Date(),
-      votes: 1, // Start with 1 vote automatically
-    };
+    });
 
-    // Add new feedback to the top of the list
-    setPosts([newFeedback, ...posts]);
+    if (response.success && response.data) {
+      // Add the real database-generated feedback to the top of the list
+      setPosts([response.data, ...posts]);
 
-    // Reset form and close modal
-    setFormData({ title: "", text: "", type: "general" });
-    setIsModalOpen(false);
+      // Reset form and close modal
+      setFormData({ title: "", text: "", type: "general" });
+      setIsModalOpen(false);
+    } else {
+      // Here you might want to show a toast notification for the error
+      console.error(response.error);
+      alert("Something went wrong. Please try again.");
+    }
+
+    setIsSubmitting(false);
   };
 
   return (
