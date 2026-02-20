@@ -1,29 +1,83 @@
 "use server";
 
-// Note: Ensure you have a global Prisma client instantiated somewhere in your project.
-// If you don't have a lib/prisma.ts file yet, you can import { PrismaClient } from '@prisma/client'
-// and instantiate it here for testing, but a global instance is recommended for Next.js.
 import prisma from "@/db";
 
-export async function createFeedback(data: {
-  title: string;
-  text: string;
-  type: string;
-}) {
+// --- CREATE FEEDBACK ---
+export async function createFeedback(
+  data: { title: string; text: string; type: string },
+  userId: string | undefined,
+) {
+  if (userId === undefined) {
+    return { success: false, error: "user is undefined" };
+  }
   try {
     const newFeedback = await prisma.feedback.create({
       data: {
         title: data.title,
         text: data.text,
         type: data.type,
-        votes: 1, // Defaulting to 1 vote upon creation
+        votes: 1,
+        upvotedBy: [userId], // Automatically counts the creator's upvote
       },
     });
 
-    // Return the newly created document so the frontend can update its state
     return { success: true, data: newFeedback };
   } catch (error) {
     console.error("Failed to create feedback:", error);
     return { success: false, error: "Failed to create feedback" };
+  }
+}
+
+// --- FETCH FEEDBACK ---
+export async function fetchFeedback() {
+  try {
+    // Fetches all feedback, ordering by newest first
+    const feedbackList = await prisma.feedback.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return { success: true, data: feedbackList };
+  } catch (error) {
+    console.error("Failed to fetch feedback:", error);
+    return { success: false, error: "Failed to fetch feedback records" };
+  }
+}
+
+// --- UPVOTE FEEDBACK ---
+export async function upvoteUpdate(feedbackId: string, userId: string) {
+  if (!userId) {
+    return { success: false, error: "You must be logged in to upvote." };
+  }
+
+  try {
+    // 1. Fetch the specific feedback record
+    const feedback = await prisma.feedback.findUnique({
+      where: { id: feedbackId },
+    });
+
+    if (!feedback) {
+      return { success: false, error: "Feedback not found." };
+    }
+
+    // 2. Check if the user has already upvoted
+    if (feedback.upvotedBy.includes(userId)) {
+      return { success: false, error: "You have already upvoted this post." };
+    }
+
+    // 3. Atomically update the record: increment votes AND add the userId to the array
+    const updatedFeedback = await prisma.feedback.update({
+      where: { id: feedbackId },
+      data: {
+        votes: { increment: 1 },
+        upvotedBy: { push: userId },
+      },
+    });
+
+    return { success: true, data: updatedFeedback };
+  } catch (error) {
+    console.error("Failed to upvote feedback:", error);
+    return { success: false, error: "An error occurred while upvoting." };
   }
 }

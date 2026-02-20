@@ -286,4 +286,5 @@ model Feedback {
   type      String // "bug", "feature", or "general"
   votes     Int      @default(0)
   createdAt DateTime @default(now())
+  upvotedBy String[] @default([]) // tracks users who have upvoted
 }

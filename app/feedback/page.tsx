@@ -1,8 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { createFeedback } from "@/actions/feedback";
+import {
+  createFeedback,
+  fetchFeedback,
+  upvoteUpdate,
+} from "@/actions/feedback";
 import { ChevronUp, Map, Plus } from "lucide-react";
+import { useSession } from "next-auth/react";
 import {
   Select,
   SelectContent,
@@ -14,35 +19,9 @@ import {
 } from "@/components/ui/select";
 
 export default function Page() {
-  // 1. Moved the hardcoded array into state so the UI updates on new submissions
-  const [posts, setPosts] = useState([
-    {
-      id: "1",
-      title: "Bug",
-      text: "fix this bug",
-      type: "bug",
-      createdAt: new Date(),
-      votes: 1,
-    },
-    {
-      id: "2",
-      title: "Feature",
-      text: "this would be cool",
-      type: "feature",
-      createdAt: new Date(),
-      votes: 1,
-    },
-    {
-      id: "3",
-      title: "Feedback",
-      text: "keep up the good work",
-      type: "general",
-      createdAt: new Date(),
-      votes: 1,
-    },
-  ]);
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [_, setIsSubmitting] = useState(false);
   const [value, setValue] = useState("all");
 
   // 2. State for managing the modal and form data
@@ -53,13 +32,37 @@ export default function Page() {
     type: "general", // Default fallback
   });
 
+  // fetching session data to confirm user only upvotes once
+  const { data: session, status } = useSession();
+  const currentUserId = session?.user?.id as string | undefined;
+
+  // Fetching feedback data for initial load
+  useEffect(() => {
+    const loadFeedback = async () => {
+      setIsLoadingPosts(true);
+      const response = await fetchFeedback();
+
+      if (response.success && response.data) {
+        setPosts(response.data);
+      } else {
+        console.error("failed to fetch feedback", response.error);
+      }
+      setIsLoadingPosts(false);
+    };
+  }, []);
+
+  // filtering posts based on select dropdown
   const filteredPosts = posts.filter((post) => {
     if (value === "all" || value === "") return true;
     return post.type === value;
   });
 
-  // 3. Updated handleClick to open the modal
+  // Updated handleClick to open the modal
   const handleClick = () => {
+    if (!currentUserId) {
+      alert("Please sign in to submit feedback.");
+      return;
+    }
     setIsModalOpen(true);
   };
 
@@ -83,11 +86,14 @@ export default function Page() {
     setIsSubmitting(true);
 
     // Call the server action
-    const response = await createFeedback({
-      title: formData.title,
-      text: formData.text,
-      type: formData.type,
-    });
+    const response = await createFeedback(
+      {
+        title: formData.title,
+        text: formData.text,
+        type: formData.type,
+      },
+      currentUserId,
+    );
 
     if (response.success && response.data) {
       // Add the real database-generated feedback to the top of the list
@@ -199,11 +205,27 @@ export default function Page() {
                   </div>
                   <div className="group">
                     <button
-                      className="flex flex-col items-center justify-center rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 hover:bg-white sm:px-4"
-                      onClick={handleUpVote}
+                      className={`flex flex-col items-center justify-center rounded-lg border px-3 py-2 transition-colors sm:px-4 ${
+                        hasUpvoted
+                          ? "cursor-default border-red-200 bg-red-50"
+                          : "border-gray-100 bg-gray-50 hover:bg-white"
+                      }`}
+                      onClick={() => handleUpVote(post.id)}
+                      disabled={hasUpvoted || !currentUserId}
+                      title={!currentUserId ? "Sign in to upvote" : ""}
                     >
-                      <ChevronUp className="text-primary-red group-hover:text-red-500" />
-                      <span className="font-bold">{post.votes}</span>
+                      <ChevronUp
+                        className={
+                          hasUpvoted
+                            ? "text-red-500"
+                            : "text-primary-red group-hover:text-red-500"
+                        }
+                      />
+                      <span
+                        className={`font-bold ${hasUpvoted ? "text-red-500" : ""}`}
+                      >
+                        {post.votes}
+                      </span>
                     </button>
                   </div>
                 </div>
