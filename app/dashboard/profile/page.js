@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function Settings() {
   const { authState } = useAuth();
@@ -152,13 +153,13 @@ export default function Settings() {
           setImagePreview(result.imageUrl);
           setProfileImage(null); // Clear the file input after successful upload
         }
-        alert("Profile updated successfully!");
+        toast.success("Profile updated successfully!");
       } else {
-        alert("Failed to update profile");
+        toast.error("Failed to update profile");
       }
     } catch (error) {
       console.error("Error updating profile:", error?.message || error);
-      alert("An error occurred while updating profile");
+      toast.error("An error occurred while updating profile");
     } finally {
       setLoading(false);
     }

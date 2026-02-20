@@ -107,7 +107,7 @@ export default function UserMenu({ mobile }) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="flex items-center gap-2 px-2"
+          className="user-menu-trigger flex items-center gap-2 px-2"
         >
           <Avatar className="h-8 w-8">
             <AvatarImage

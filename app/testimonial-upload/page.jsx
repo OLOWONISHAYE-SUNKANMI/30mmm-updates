@@ -2,6 +2,7 @@
 
 import { MobileUploadOptimizer } from "@/lib/mobile-upload-optimizer";
 import { useRef, useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function TestimonialUploadPage() {
   const [cohort, setCohort] = useState("");
@@ -41,7 +42,7 @@ export default function TestimonialUploadPage() {
     } else {
       setFile(null);
       setPreviewUrl(null);
-      alert("Please select a valid video file");
+      toast.error("Please select a valid video file");
     }
   };
 
@@ -95,7 +96,7 @@ export default function TestimonialUploadPage() {
     e.preventDefault();
 
     if (!week || !day || !file || !firstName || !lastName || !cohort) {
-      alert("Please add all fields to submit this form successfully");
+      toast.error("Please add all fields to submit this form successfully");
       return;
     }
 
@@ -436,11 +437,10 @@ export default function TestimonialUploadPage() {
                   Upload Video:
                 </label>
                 <div
-                  className={`relative mt-1 flex justify-center rounded-lg border-2 border-dashed ${
-                    dragActive
+                  className={`relative mt-1 flex justify-center rounded-lg border-2 border-dashed ${dragActive
                       ? "border-primaryred bg-red-50"
                       : "border-gray-300"
-                  } px-2 pb-3 pt-2 xs:px-3 xs:pb-4 xs:pt-3 sm:px-6 sm:pb-6 sm:pt-5 md:px-8 md:pb-8 md:pt-6`}
+                    } px-2 pb-3 pt-2 xs:px-3 xs:pb-4 xs:pt-3 sm:px-6 sm:pb-6 sm:pt-5 md:px-8 md:pb-8 md:pt-6`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
@@ -578,17 +578,16 @@ export default function TestimonialUploadPage() {
                     !cohort ||
                     isUploading
                   }
-                  className={`w-full rounded-lg px-3 py-2 text-xs text-white transition-colors xs:px-4 xs:text-sm sm:w-auto sm:px-6 sm:text-base md:px-8 md:py-3 md:text-lg ${
-                    !week ||
-                    !day ||
-                    !file ||
-                    !firstName ||
-                    !lastName ||
-                    !cohort ||
-                    isUploading
+                  className={`w-full rounded-lg px-3 py-2 text-xs text-white transition-colors xs:px-4 xs:text-sm sm:w-auto sm:px-6 sm:text-base md:px-8 md:py-3 md:text-lg ${!week ||
+                      !day ||
+                      !file ||
+                      !firstName ||
+                      !lastName ||
+                      !cohort ||
+                      isUploading
                       ? "cursor-not-allowed bg-gray-400"
                       : "bg-primaryred hover:bg-primaryred-800"
-                  }`}
+                    }`}
                 >
                   {isUploading ? "Uploading..." : "Upload Video"}
                 </button>

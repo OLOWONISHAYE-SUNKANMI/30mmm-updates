@@ -109,28 +109,49 @@ export default function MainBody() {
 
   return (
     <div className="relative mx-auto mb-4 2xs:mb-5 xs:mb-6 sm:mb-8 flex min-h-screen w-full max-w-[1200px] flex-col items-start gap-y-2 2xs:gap-y-3 xs:gap-y-4 sm:gap-y-5 space-y-2 2xs:space-y-3 xs:space-y-4 sm:space-y-4 pt-4 2xs:pt-6 xs:pt-8 sm:pt-12 px-1 2xs:px-2 xs:px-3 sm:px-4 max-lg:mx-2">
+      <OnboardingTour />
       <div className="flex w-full flex-wrap items-center justify-start gap-1 2xs:gap-2 md:gap-y-5">
         <h1 className="text-lg 2xs:text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold leading-relaxed">
           Hello, {authState.user.name || "User"}!
         </h1>
+        <button
+          onClick={() => {
+            localStorage.removeItem("onboarding_completed");
+            window.location.reload();
+          }}
+          className="ml-2 text-xs text-gray-400 underline hover:text-gray-600 sm:ml-4"
+        >
+          Restart Tutorial
+        </button>
         <FaChevronDown size={10} className="2xs:w-3 2xs:h-3 xs:w-4 xs:h-4 sm:w-4 sm:h-4" />
 
-        <h2 className="w-full text-xs 2xs:text-sm xs:text-base font-normal text-gray-400">
-          Today is{" "}
-          <Link href={`/devotional/${devotionalId}`}>
-            <span className="font-semibold text-almost-black hover:underline">
-              Week {weekDisplay} Day {dayDisplay}: {devotionalTitle}
-            </span>
-          </Link>
-        </h2>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <h2 className="week-day-subtitle w-full text-xs 2xs:text-sm xs:text-base font-normal text-gray-400">
+                Today is{" "}
+                <Link href={`/devotional/${devotionalId}`}>
+                  <span className="font-semibold text-almost-black hover:underline">
+                    Week {weekDisplay} Day {dayDisplay}: {devotionalTitle}
+                  </span>
+                </Link>
+              </h2>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Click here to view today's devotional</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       <DonateHero />
       <div className="mr-auto w-full">
-        <h4 className="text-lg 2xs:text-xl xs:text-2xl sm:text-3xl font-semibold leading-7 tracking-wider">
+        <h4 className="clean-cohort-title text-lg 2xs:text-xl xs:text-2xl sm:text-3xl font-semibold leading-7 tracking-wider">
           CLEAN {cohortDisplay}
         </h4>
       </div>
-      <CardSection userId={authState.user.id} />
+      <div className="dashboard-card-section w-full">
+        <CardSection userId={authState.user.id} />
+      </div>
     </div>
   );
 }

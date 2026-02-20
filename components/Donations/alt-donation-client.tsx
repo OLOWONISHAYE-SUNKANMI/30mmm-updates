@@ -1,8 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import DonateButton from "@/components/Donations/process-payment-btn";
+
+// Mock router for demo - in real Next.js, you'd use: import { useRouter } from "next/navigation"
+const useMockRouter = () => ({
+  push: (path: string) => {
+    console.log(`Navigation: Redirecting to ${path}`);
+    alert(`Demo: Would navigate to ${path}`);
+  },
+});
 
 interface DiscountCode {
   code: string;
@@ -23,10 +30,7 @@ const DonationPage: React.FC<DonationPageProps> = ({
   userEmail,
   isPremium,
 }) => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const isCanceled = searchParams.get("canceled") === "true";
-  const returnUrl = searchParams.get("returnUrl") || null;
+  const router = useMockRouter();
 
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(
@@ -137,12 +141,12 @@ const DonationPage: React.FC<DonationPageProps> = ({
   // Stripe Checkout handler
   const handleDonate = async () => {
     const finalAmount = getFinalAmount();
-    
+
     // If amount is $0, skip Stripe and mark as premium directly
     if (finalAmount === 0) {
       setIsProcessingPayment(true);
       setValidationError(null);
-      
+
       try {
         const response = await fetch("/api/create-checkout-dashboard", {
           method: "POST",
@@ -162,7 +166,7 @@ const DonationPage: React.FC<DonationPageProps> = ({
         }
 
         const data = await response.json();
-        
+
         // Redirect to dashboard
         window.location.href = data.redirectUrl || "/dashboard";
       } catch (error) {
@@ -176,7 +180,7 @@ const DonationPage: React.FC<DonationPageProps> = ({
       }
       return;
     }
-    
+
     setIsProcessingPayment(true);
     setValidationError(null);
 
@@ -288,6 +292,39 @@ const DonationPage: React.FC<DonationPageProps> = ({
       <div className="mb-8 text-center">
         <h1 className="mb-2 text-3xl font-bold">Hello, {userName}!</h1>
       </div>
+
+      {/* Payment Cancelled Notice */}
+      {canceled && (
+        <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Payment Cancelled</AlertTitle>
+          <AlertDescription className="mt-2 flex flex-col gap-4">
+            <p>
+              Your payment was cancelled. No charges were made. You can try again or
+              return to the dashboard.
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="bg-white"
+                onClick={() => {
+                  window.history.replaceState(null, "", "/payment");
+                  // Optional: reset any state if needed
+                }}
+              >
+                Try Again
+              </Button>
+              <Button
+                variant="default"
+                className="bg-red-600 hover:bg-red-700"
+                onClick={() => router.push("/dashboard")}
+              >
+                Go to Dashboard
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Discount Code Input */}
       <div className="mb-6 rounded-lg border border-gray-200 p-6">
