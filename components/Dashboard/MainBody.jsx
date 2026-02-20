@@ -9,6 +9,8 @@ import { FaChevronDown } from "react-icons/fa";
 import DonateHero from "@/components/Dashboard/DonateHero";
 import { calculateWeekAndDay } from "@/lib/calculateWeekAndDay";
 import CardSection from "@/components/Dashboard/CardSection";
+import OnboardingTour from "@/components/Dashboard/OnboardingTour";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function MainBody() {
   const { authState } = useAuth();
