@@ -279,3 +279,12 @@ model VideoComment {
 
   @@map("video_comments")
 }
+
+model Feedback {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  text      String
+  type      String // "bug", "feature", or "general"
+  votes     Int      @default(0)
+  createdAt DateTime @default(now())
+}

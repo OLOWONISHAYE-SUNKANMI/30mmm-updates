@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { ChevronUp, Map, Plus } from "lucide-react";
 import {
   Select,
@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/select";
 
 export default function Page() {
-  const postArray = [
+  // 1. Moved the hardcoded array into state so the UI updates on new submissions
+  const [posts, setPosts] = useState([
     {
       id: "1",
       title: "Bug",
@@ -38,25 +39,65 @@ export default function Page() {
       createdAt: new Date(),
       votes: 1,
     },
-  ];
+  ]);
 
   const [value, setValue] = useState("all");
 
-  const filteredPosts = postArray.filter((post) => {
+  // 2. State for managing the modal and form data
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    text: "",
+    type: "general", // Default fallback
+  });
+
+  const filteredPosts = posts.filter((post) => {
     if (value === "all" || value === "") return true;
     return post.type === value;
   });
 
+  // 3. Updated handleClick to open the modal
   const handleClick = () => {
-    console.log("TODO: feedback submission");
+    setIsModalOpen(true);
   };
 
   const handleUpVote = () => {
     console.log("TODO: upvote");
   };
 
+  // 4. Handle form input changes
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // 5. Handle the actual form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const newFeedback = {
+      id: Date.now().toString(), // Simple ID generation
+      title: formData.title,
+      text: formData.text,
+      type: formData.type,
+      createdAt: new Date(),
+      votes: 1, // Start with 1 vote automatically
+    };
+
+    // Add new feedback to the top of the list
+    setPosts([newFeedback, ...posts]);
+
+    // Reset form and close modal
+    setFormData({ title: "", text: "", type: "general" });
+    setIsModalOpen(false);
+  };
+
   return (
-    <div>
+    <div className="relative">
       {/* Header */}
       <div
         id="header-container"
@@ -71,15 +112,17 @@ export default function Page() {
               <h1 className="mx-auto text-2xl font-bold">Give Feedback</h1>
               <p className="text-sm">
                 Have an issue with our site? Think something would be great to
-                add? Please upvote what others have said or tell us your idea
-                for our next feature. We hope to bring it to you as quick as we
-                can!
+                add?
+                <br />
+                <br />
+                Please upvote what others have said or tell us your idea for our
+                next feature. We hope to bring it to you as quick as we can!
               </p>
-              <h3 className="text-sm font-medium sm:text-base">
+              <h3 className="mt-2 text-sm font-medium sm:text-base">
                 Choose the feedback you would like to see:
               </h3>
             </div>
-            <SelectTrigger className="w-full sm:w-[60%]">
+            <SelectTrigger className="w-full border-gray-300 sm:w-[60%]">
               <SelectValue placeholder="Filter Feedback" />
             </SelectTrigger>
             <SelectContent>
@@ -164,6 +207,100 @@ export default function Page() {
           </div>
         </div>
       </div>
+
+      {/* Modal Overlay */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl sm:p-8">
+            <h2 className="mb-6 text-2xl font-bold text-slate-800">
+              Submit New Feedback
+            </h2>
+
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-5"
+            >
+              {/* Title Field */}
+              <div>
+                <label
+                  htmlFor="title"
+                  className="mb-1 block text-sm font-semibold text-slate-700"
+                >
+                  Title
+                </label>
+                <input
+                  id="title"
+                  name="title"
+                  type="text"
+                  required
+                  placeholder="E.g., Dark mode isn't working"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary-red focus:outline-none focus:ring-1 focus:ring-primary-red"
+                />
+              </div>
+
+              {/* Description Field */}
+              <div>
+                <label
+                  htmlFor="text"
+                  className="mb-1 block text-sm font-semibold text-slate-700"
+                >
+                  Description
+                </label>
+                <textarea
+                  id="text"
+                  name="text"
+                  required
+                  rows={4}
+                  placeholder="Please provide details..."
+                  value={formData.text}
+                  onChange={handleInputChange}
+                  className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2 focus:border-primary-red focus:outline-none focus:ring-1 focus:ring-primary-red"
+                />
+              </div>
+
+              {/* Type Field */}
+              <div>
+                <label
+                  htmlFor="type"
+                  className="mb-1 block text-sm font-semibold text-slate-700"
+                >
+                  Feedback Type
+                </label>
+                <select
+                  id="type"
+                  name="type"
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 focus:border-primary-red focus:outline-none focus:ring-1 focus:ring-primary-red"
+                >
+                  <option value="general">General Feedback</option>
+                  <option value="feature">Feature Request</option>
+                  <option value="bug">Bug Report</option>
+                </select>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-lg px-5 py-2 font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-lg bg-primary-red px-5 py-2 font-medium text-white shadow-md transition-colors hover:bg-red-500"
+                >
+                  Submit Post
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
