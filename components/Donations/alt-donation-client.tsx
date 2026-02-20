@@ -2,12 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import DonateButton from "@/components/Donations/process-payment-btn";
+import { toast } from "sonner";
+import { useSearchParams, useRouter } from "next/navigation";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 // Mock router for demo - in real Next.js, you'd use: import { useRouter } from "next/navigation"
 const useMockRouter = () => ({
   push: (path: string) => {
     console.log(`Navigation: Redirecting to ${path}`);
-    alert(`Demo: Would navigate to ${path}`);
+    toast.info(`Demo: Would navigate to ${path}`);
   },
 });
 
@@ -30,7 +35,9 @@ const DonationPage: React.FC<DonationPageProps> = ({
   userEmail,
   isPremium,
 }) => {
-  const router = useMockRouter();
+  const router = useRouter(); // Use real router
+  const searchParams = useSearchParams();
+  const canceled = searchParams.get("canceled");
 
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<DiscountCode | null>(
@@ -156,7 +163,6 @@ const DonationPage: React.FC<DonationPageProps> = ({
             email: userEmail,
             discountCode: appliedDiscount?.code || null,
             paymentMethod: "free_discount",
-            returnUrl: returnUrl || "/dashboard",
           }),
         });
 
@@ -194,7 +200,6 @@ const DonationPage: React.FC<DonationPageProps> = ({
           email: userEmail,
           discountCode: appliedDiscount?.code || null,
           widgetId: appliedDiscount?.widgetId || null,
-          returnUrl: returnUrl || "/dashboard",
         }),
       });
 
@@ -208,9 +213,6 @@ const DonationPage: React.FC<DonationPageProps> = ({
       if (!sessionUrl) {
         throw new Error("No session URL returned from server");
       }
-
-      // Push to history to ensure back button works properly
-      window.history.pushState({ returnUrl: returnUrl || "/dashboard" }, "", window.location.href);
 
       // Redirect to Stripe Checkout
       window.location.href = sessionUrl;
@@ -237,49 +239,6 @@ const DonationPage: React.FC<DonationPageProps> = ({
             <p className="text-gray-600">
               You already have premium access. Redirecting to your dashboard...
             </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show cancellation message if user cancelled payment
-  if (isCanceled) {
-    return (
-      <div className="mx-auto max-w-4xl p-6">
-        <div className="mb-8 rounded-lg border border-orange-200 bg-orange-50 p-8">
-          <div className="text-center">
-            <svg
-              className="mx-auto mb-4 h-12 w-12 text-orange-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              ></path>
-            </svg>
-            <h2 className="mb-2 text-2xl font-semibold text-orange-900">
-              Payment Cancelled
-            </h2>
-            <p className="mb-6 text-orange-800">
-              Your payment was not processed. You can try again whenever you're ready.
-            </p>
-            <button
-              onClick={() => {
-                if (returnUrl) {
-                  window.location.href = returnUrl;
-                } else {
-                  router.push("/dashboard");
-                }
-              }}
-              className="rounded-md bg-primary-red px-6 py-2 text-white transition-colors hover:bg-red-700"
-            >
-              Go Back
-            </button>
           </div>
         </div>
       </div>
