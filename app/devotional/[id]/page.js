@@ -176,9 +176,9 @@ export default function Devotional({ params }) {
         </button>
 
         {/* Content Container - Responsive spacing and layout */}
-        <div className="flex flex-col items-center rounded-lg bg-white p-4 shadow-sm sm:p-6 md:p-8">
+        <div className="flex flex-col items-start rounded-lg bg-white p-4 shadow-sm sm:p-6 md:p-8">
           {/* Title Section - Responsive spacing */}
-          <div className="mr-[20vw] flex flex-col sm:mb-6 md:mb-8">
+          <div className="flex flex-col items-start sm:mb-6 md:mb-8">
             <Title
               weekTitle={devotionalData.weekTitle}
               dayTitle={devotionalData.dayTitle}
