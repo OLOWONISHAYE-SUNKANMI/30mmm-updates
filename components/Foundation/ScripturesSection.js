@@ -18,7 +18,7 @@ export default function ScripturesSection({ scriptures }) {
           className="mb-16 items-center"
         >
           {/* Scripture Text */}
-          <div className="mb-4 flex text-center text-xl font-bold capitalize max-xs:px-10 max-xs:text-lg lg:text-2xl">
+          <div className="mb-4 flex text-center text-xl font-bold max-xs:px-10 max-xs:text-lg lg:text-2xl">
             {scripture.text}
           </div>
 

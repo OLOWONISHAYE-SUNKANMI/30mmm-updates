@@ -153,7 +153,6 @@ export default function Devotional({ params }) {
     <div className="min-h-screen w-full bg-gray-50">
       {/* Main Container - Responsive padding and max-width */}
       <div className="mx-auto w-full max-w-lg px-4 py-4 sm:max-w-2xl sm:px-6 sm:py-6 md:max-w-3xl md:px-8 md:py-8 lg:max-w-5xl lg:px-10 lg:py-10 xl:max-w-6xl xl:px-12">
-        
         {/* Back Button - Responsive sizing */}
         <button
           onClick={() => router.push("/dashboard")}
@@ -177,23 +176,21 @@ export default function Devotional({ params }) {
         </button>
 
         {/* Content Container - Responsive spacing and layout */}
-        <div className="rounded-lg bg-white p-4 shadow-sm sm:p-6 md:p-8">
-          
+        <div className="flex flex-col items-center rounded-lg bg-white p-4 shadow-sm sm:p-6 md:p-8">
           {/* Title Section - Responsive spacing */}
-          <div className="mb-4 sm:mb-6 md:mb-8">
+          <div className="mr-[20vw] flex flex-col sm:mb-6 md:mb-8">
             <Title
               weekTitle={devotionalData.weekTitle}
               dayTitle={devotionalData.dayTitle}
               daySubtitle={devotionalData.daySubTitle}
             />
-          </div>
-
-          {/* SubTitle Section - Responsive spacing */}
-          <div className="mb-4 sm:mb-6">
-            <SubTitle
-              week={devotionalData.week}
-              day={devotionalData.day}
-            />
+            {/* SubTitle Section - Responsive spacing */}
+            <div className="mb-4 mt-4 sm:mb-6">
+              <SubTitle
+                week={devotionalData.week}
+                day={devotionalData.day}
+              />
+            </div>
           </div>
 
           {/* Main Image - Responsive container */}
