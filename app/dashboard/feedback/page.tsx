@@ -131,6 +131,12 @@ export default function Page() {
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
               Feedback Board
             </h1>
+            <h4 className="max-w-xl text-sm font-semibold italic leading-relaxed text-slate-500 sm:text-base">
+              Then the Lord answered me and said: &quot;Write the vision and
+              make it plain on tablets, That he may run who reads it.&quot; -
+              Habakkuk 2:2
+            </h4>
+
             <p className="max-w-xl text-sm leading-relaxed text-slate-500 sm:text-base">
               Have an issue with our site? Think something would be great to
               add?
