@@ -199,7 +199,7 @@ export default function Devotional({ params }) {
           </div>
 
           {/* Quotes Section - Responsive spacing */}
-          <div className="mb-6 sm:mb-8 md:mb-10">
+          <div className="mb-6 flex w-full justify-center sm:mb-8 md:mb-10">
             <Quotes />
           </div>
 
