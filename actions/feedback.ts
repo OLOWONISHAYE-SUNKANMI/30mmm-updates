@@ -4,18 +4,20 @@ import prisma from "@/db";
 
 // --- CREATE FEEDBACK ---
 export async function createFeedback(
-  data: { title: string; text: string; type: string },
+  data: { title: string; text: string; type: string; url: string },
   userId: string | undefined,
 ) {
   if (userId === undefined) {
     return { success: false, error: "user is undefined" };
   }
   try {
+    console.log(data);
     const newFeedback = await prisma.feedback.create({
       data: {
         title: data.title,
         text: data.text,
         type: data.type,
+        url: data.url,
         votes: 1,
         upvotedBy: [userId], // Automatically counts the creator's upvote
       },

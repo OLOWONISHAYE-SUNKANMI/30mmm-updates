@@ -282,6 +282,7 @@ model VideoComment {
 model Feedback {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   title     String
+  url       String?
   text      String
   type      String // "bug", "feature", or "general"
   votes     Int      @default(0)

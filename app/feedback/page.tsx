@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   createFeedback,
   fetchFeedback,
@@ -21,22 +21,20 @@ import {
 export default function Page() {
   const [posts, setPosts] = useState<any[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
-  const [_, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [value, setValue] = useState("all");
 
-  // 2. State for managing the modal and form data
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     text: "",
-    type: "general", // Default fallback
+    type: "general",
+    url: "",
   });
 
-  // fetching session data to confirm user only upvotes once
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const currentUserId = session?.user?.id as string | undefined;
 
-  // Fetching feedback data for initial load
   useEffect(() => {
     const loadFeedback = async () => {
       setIsLoadingPosts(true);
@@ -49,15 +47,14 @@ export default function Page() {
       }
       setIsLoadingPosts(false);
     };
+    loadFeedback();
   }, []);
 
-  // filtering posts based on select dropdown
   const filteredPosts = posts.filter((post) => {
     if (value === "all" || value === "") return true;
     return post.type === value;
   });
 
-  // Updated handleClick to open the modal
   const handleClick = () => {
     if (!currentUserId) {
       alert("Please sign in to submit feedback.");
@@ -66,11 +63,12 @@ export default function Page() {
     setIsModalOpen(true);
   };
 
-  const handleUpVote = () => {
-    console.log("TODO: upvote");
+  const handleUpVote = async (postId: string) => {
+    if (!currentUserId) return;
+    // Implementation for upvoting logic would go here
+    console.log("Upvoting post:", postId);
   };
 
-  // 4. Handle form input changes
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -80,30 +78,25 @@ export default function Page() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // 5. Handle the actual form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Call the server action
     const response = await createFeedback(
       {
         title: formData.title,
         text: formData.text,
         type: formData.type,
+        url: formData.url,
       },
       currentUserId,
     );
 
     if (response.success && response.data) {
-      // Add the real database-generated feedback to the top of the list
       setPosts([response.data, ...posts]);
-
-      // Reset form and close modal
-      setFormData({ title: "", text: "", type: "general" });
+      setFormData({ title: "", text: "", type: "general", url: "" });
       setIsModalOpen(false);
     } else {
-      // Here you might want to show a toast notification for the error
       console.error(response.error);
       alert("Something went wrong. Please try again.");
     }
@@ -119,25 +112,26 @@ export default function Page() {
         className="flex flex-col rounded-md border-2 border-primary-red p-6 shadow-md md:p-16"
       >
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-x-10">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">Give Feedback</h1>
+            <p className="mt-2 text-sm">
+              Have an issue with our site? Think something would be great to
+              add?
+              <br />
+              <br />
+              Please upvote what others have said or tell us your idea for our
+              next feature.
+            </p>
+            <h3 className="mt-4 text-sm font-medium sm:text-base">
+              Choose the feedback you would like to see:
+            </h3>
+          </div>
+
           <Select
             onValueChange={setValue}
             value={value}
           >
-            <div>
-              <h1 className="mx-auto text-2xl font-bold">Give Feedback</h1>
-              <p className="text-sm">
-                Have an issue with our site? Think something would be great to
-                add?
-                <br />
-                <br />
-                Please upvote what others have said or tell us your idea for our
-                next feature. We hope to bring it to you as quick as we can!
-              </p>
-              <h3 className="mt-2 text-sm font-medium sm:text-base">
-                Choose the feedback you would like to see:
-              </h3>
-            </div>
-            <SelectTrigger className="w-full border-gray-300 sm:w-[60%]">
+            <SelectTrigger className="w-full border-gray-300 sm:w-[250px]">
               <SelectValue placeholder="Filter Feedback" />
             </SelectTrigger>
             <SelectContent>
@@ -153,9 +147,9 @@ export default function Page() {
 
           <div className="group relative w-max self-end sm:self-auto">
             <button className="p-2 sm:p-0">
-              <Map className="hover:text-primary-red hover:shadow-sm" />
+              <Map className="hover:text-primary-red" />
             </button>
-            <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
               Public Roadmap <br />
               Coming Soon
             </span>
@@ -163,73 +157,77 @@ export default function Page() {
         </div>
       </div>
 
-      <div
-        id="body-container"
-        className="flex min-h-screen flex-col rounded-md bg-gray-200"
-      >
-        <div
-          id="top-row"
-          className="mb-6 mt-8 flex w-full flex-col px-4 sm:px-8"
-        >
+      <div className="flex min-h-screen flex-col rounded-md bg-gray-100 pb-20">
+        <div className="mb-6 mt-8 flex w-full flex-col px-4 sm:px-8">
           <button
             onClick={handleClick}
-            className="mb-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-red px-6 py-3 font-semibold text-white shadow-md transition-all hover:bg-red-500 hover:shadow-lg active:scale-95 sm:w-auto sm:self-end"
+            className="mb-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-red px-6 py-3 font-semibold text-white shadow-md transition-all hover:bg-red-500 active:scale-95 sm:w-auto sm:self-end"
           >
-            <Plus
-              size={24}
-              strokeWidth={2.5}
-            />
+            <Plus size={24} />
             <span className="text-lg">Feedback</span>
           </button>
 
-          <div
-            id="list-container"
-            className="mx-auto flex w-full max-w-5xl flex-col gap-y-4"
-          >
-            {filteredPosts.length > 0 ? (
-              filteredPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-gray-300 bg-white p-4 shadow-sm sm:p-6"
-                >
-                  <div className="flex flex-col gap-2">
-                    <h3 className="text-lg font-bold text-slate-800 sm:text-xl">
-                      {post.title}
-                    </h3>
-                    <p className="text-sm text-slate-600 sm:text-base">
-                      {post.text}
-                    </p>
-                    <span className="font-mono text-xs uppercase text-slate-400">
-                      {post.type}
-                    </span>
-                  </div>
-                  <div className="group">
-                    <button
-                      className={`flex flex-col items-center justify-center rounded-lg border px-3 py-2 transition-colors sm:px-4 ${
-                        hasUpvoted
-                          ? "cursor-default border-red-200 bg-red-50"
-                          : "border-gray-100 bg-gray-50 hover:bg-white"
-                      }`}
-                      onClick={() => handleUpVote(post.id)}
-                      disabled={hasUpvoted || !currentUserId}
-                      title={!currentUserId ? "Sign in to upvote" : ""}
-                    >
-                      <ChevronUp
-                        className={
+          <div className="mx-auto flex w-full max-w-5xl flex-col gap-y-4">
+            {isLoadingPosts ? (
+              <div className="py-10 text-center">Loading posts...</div>
+            ) : filteredPosts.length > 0 ? (
+              filteredPosts.map((post) => {
+                // FIXED: Defining hasUpvoted inside the loop
+                const hasUpvoted = post.upvoterIds?.includes(currentUserId);
+
+                return (
+                  <div
+                    key={post.id}
+                    className="flex items-center justify-between gap-4 rounded-xl border border-gray-300 bg-white p-4 shadow-sm sm:p-6"
+                  >
+                    <div className="flex flex-col gap-2">
+                      <h3 className="text-lg font-bold text-slate-800 sm:text-xl">
+                        {post.title}
+                      </h3>
+                      <p className="text-sm text-slate-600 sm:text-base">
+                        {post.text}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-xs uppercase text-slate-400">
+                          {post.type}
+                        </span>
+                        {post.url && (
+                          <span className="max-w-[200px] truncate text-xs text-blue-500">
+                            {post.url}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="group">
+                      <button
+                        className={`flex flex-col items-center justify-center rounded-lg border px-3 py-2 transition-colors sm:px-4 ${
                           hasUpvoted
-                            ? "text-red-500"
-                            : "text-primary-red group-hover:text-red-500"
-                        }
-                      />
-                      <span
-                        className={`font-bold ${hasUpvoted ? "text-red-500" : ""}`}
+                            ? "cursor-default border-red-200 bg-red-50"
+                            : "border-gray-100 bg-gray-50 hover:bg-white"
+                        }`}
+                        onClick={() => handleUpVote(post.id)}
+                        disabled={hasUpvoted || !currentUserId}
+                        title={!currentUserId ? "Sign in to upvote" : ""}
                       >
-                        {post.votes}
-                      </span>
-                    </button>
+                        <ChevronUp
+                          className={
+                            hasUpvoted
+                              ? "text-red-500"
+                              : "text-primary-red group-hover:text-red-500"
+                          }
+                        />
+                        <span
+                          className={`font-bold ${
+                            hasUpvoted ? "text-red-500" : ""
+                          }`}
+                        >
+                          {post.votes || 0}
+                        </span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="py-20 text-center text-gray-500">
                 No posts found for this category.
@@ -251,7 +249,6 @@ export default function Page() {
               onSubmit={handleSubmit}
               className="flex flex-col gap-5"
             >
-              {/* Title Field */}
               <div>
                 <label
                   htmlFor="title"
@@ -271,7 +268,25 @@ export default function Page() {
                 />
               </div>
 
-              {/* Description Field */}
+              <div>
+                <label
+                  htmlFor="url"
+                  className="mb-1 block text-sm font-semibold text-slate-700"
+                >
+                  URL (from address bar) [optional]
+                </label>
+                <input
+                  id="url"
+                  name="url"
+                  type="text"
+                  // FIXED: Removed 'required' attribute
+                  placeholder="E.g.: https://thecleanprogram.org/..."
+                  value={formData.url}
+                  onChange={handleInputChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary-red focus:outline-none focus:ring-1 focus:ring-primary-red"
+                />
+              </div>
+
               <div>
                 <label
                   htmlFor="text"
@@ -284,14 +299,13 @@ export default function Page() {
                   name="text"
                   required
                   rows={4}
-                  placeholder="Please provide details..."
+                  placeholder="Please describe the issue..."
                   value={formData.text}
                   onChange={handleInputChange}
                   className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2 focus:border-primary-red focus:outline-none focus:ring-1 focus:ring-primary-red"
                 />
               </div>
 
-              {/* Type Field */}
               <div>
                 <label
                   htmlFor="type"
@@ -304,7 +318,7 @@ export default function Page() {
                   name="type"
                   value={formData.type}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 focus:border-primary-red focus:outline-none focus:ring-1 focus:ring-primary-red"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2"
                 >
                   <option value="general">General Feedback</option>
                   <option value="feature">Feature Request</option>
@@ -312,20 +326,20 @@ export default function Page() {
                 </select>
               </div>
 
-              {/* Action Buttons */}
               <div className="mt-4 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-lg px-5 py-2 font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                  className="rounded-lg px-5 py-2 font-medium text-slate-600 hover:bg-slate-100"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-primary-red px-5 py-2 font-medium text-white shadow-md transition-colors hover:bg-red-500"
+                  disabled={isSubmitting}
+                  className="rounded-lg bg-primary-red px-5 py-2 font-medium text-white shadow-md hover:bg-red-500 disabled:opacity-50"
                 >
-                  Submit Post
+                  {isSubmitting ? "Submitting..." : "Submit Post"}
                 </button>
               </div>
             </form>
