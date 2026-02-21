@@ -120,19 +120,20 @@ export default function Page() {
   };
 
   return (
-    <div className="relative">
+    <div className="border-b border-gray-200 bg-white shadow-sm">
       {/* Header */}
       <div
         id="header-container"
-        className="flex flex-col rounded-md border-2 border-primary-red p-6 shadow-md md:p-16"
+        className="mx-auto max-w-5xl px-4 py-8 sm:px-8"
       >
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-x-10">
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">Give Feedback</h1>
-            <p className="mt-2 text-sm">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-x-10">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+              Feedback Board
+            </h1>
+            <p className="max-w-xl text-sm leading-relaxed text-slate-500 sm:text-base">
               Have an issue with our site? Think something would be great to
               add?
-              <br />
               <br />
               Please upvote what others have said or tell us your idea for our
               next feature.
@@ -160,11 +161,12 @@ export default function Page() {
             </SelectContent>
           </Select>
 
-          <div className="group relative w-max self-end sm:self-auto">
-            <button className="p-2 sm:p-0">
-              <Map className="hover:text-primary-red" />
+          <div className="group relative w-fit">
+            <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 sm:px-4 sm:py-2 sm:text-sm">
+              <Map className="w-[36px] hover:text-primary-red sm:w-[18px]" />
+              <span>Feature Roadmap</span>
             </button>
-            <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 transform whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="pointer-events-none absolute -top-12 left-0 z-10 transform whitespace-nowrap rounded bg-slate-900 px-3 py-1.5 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 sm:left-1/2 sm:-translate-x-1/2">
               Public Roadmap <br />
               Coming Soon
             </span>
