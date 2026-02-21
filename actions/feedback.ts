@@ -1,5 +1,6 @@
 "use server";
 
+import { sendSlackNotification } from "@/actions/slack-feedback-notifications";
 import prisma from "@/db";
 
 // --- CREATE FEEDBACK ---
@@ -18,10 +19,17 @@ export async function createFeedback(
         text: data.text,
         type: data.type,
         url: data.url,
-        votes: 1,
+        votes: 0,
         upvotedBy: [userId], // Automatically counts the creator's upvote
       },
     });
+
+    try {
+      await sendSlackNotification(data);
+    } catch (error) {
+      console.error("failed to post to slack", error);
+      return { success: false, data: newFeedback };
+    }
 
     return { success: true, data: newFeedback };
   } catch (error) {

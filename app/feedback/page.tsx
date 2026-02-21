@@ -8,6 +8,7 @@ import {
 } from "@/actions/feedback";
 import { ChevronUp, Map, Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -57,16 +58,26 @@ export default function Page() {
 
   const handleClick = () => {
     if (!currentUserId) {
-      alert("Please sign in to submit feedback.");
+      toast.error("Please sign in to submit feedback.");
       return;
     }
     setIsModalOpen(true);
   };
 
-  const handleUpVote = async (postId: string) => {
+  const handleUpVote = async (postId, currentUserId) => {
     if (!currentUserId) return;
-    // Implementation for upvoting logic would go here
+
     console.log("Upvoting post:", postId);
+    const response = await upvoteUpdate(postId, currentUserId);
+
+    if (response.success && response.data) {
+      // FIX: Update the specific post in the array instead of adding a new one
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => (post.id === postId ? response.data : post)),
+      );
+    } else {
+      toast.error(response.error);
+    }
   };
 
   const handleInputChange = (
@@ -96,9 +107,13 @@ export default function Page() {
       setPosts([response.data, ...posts]);
       setFormData({ title: "", text: "", type: "general", url: "" });
       setIsModalOpen(false);
+
+      toast.success("Feedback submitted successfully! Thanks!");
+
+      // TODO: send response.data to slack for notifications
     } else {
       console.error(response.error);
-      alert("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     }
 
     setIsSubmitting(false);
@@ -205,7 +220,7 @@ export default function Page() {
                             ? "cursor-default border-red-200 bg-red-50"
                             : "border-gray-100 bg-gray-50 hover:bg-white"
                         }`}
-                        onClick={() => handleUpVote(post.id)}
+                        onClick={() => handleUpVote(post.id, currentUserId)}
                         disabled={hasUpvoted || !currentUserId}
                         title={!currentUserId ? "Sign in to upvote" : ""}
                       >
