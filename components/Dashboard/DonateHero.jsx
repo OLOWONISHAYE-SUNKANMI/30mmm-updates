@@ -65,7 +65,6 @@ export default function DonateHero({ onClick }) {
           email: authState.user.email, // Assuming authState is available
           cancelUrl: window.location.href, // Redirect back to current page on cancel
           donationType: donationType,
-          returnUrl: "/dashboard", // Return to dashboard if user cancels
           // Add any additional metadata you need
           metadata: {
             program: "The Clean Program",
@@ -77,8 +76,6 @@ export default function DonateHero({ onClick }) {
       const { url } = await response.json();
 
       if (url) {
-        // Push to history to ensure back button works properly
-        window.history.pushState({ returnUrl: "/dashboard" }, "", window.location.href);
         // Redirect to Stripe Checkout
         window.location.href = url;
       } else {

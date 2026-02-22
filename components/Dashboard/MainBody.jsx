@@ -8,9 +8,14 @@ import Link from "next/link";
 import { FaChevronDown } from "react-icons/fa";
 import DonateHero from "@/components/Dashboard/DonateHero";
 import { calculateWeekAndDay } from "@/lib/calculateWeekAndDay";
-import CardSection from "@/components/Dashboard/CardSection";
-import OnboardingTour from "@/components/Dashboard/OnboardingTour";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import CardSection from "./CardSection";
+import OnboardingTour from "./OnboardingTour";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function MainBody() {
   const { authState } = useAuth();
