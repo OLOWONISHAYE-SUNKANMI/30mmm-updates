@@ -14,7 +14,7 @@ export async function POST(request) {
   // Debug: Check if base URL is set correctly
   console.log("NEXT_PUBLIC_BASE_URL:", process.env.NEXT_PUBLIC_BASE_URL);
 
-  const { amount, email, discountCode, widgetId, returnUrl } = await request.json();
+  const { amount, email, discountCode, widgetId, cancelUrl, successUrl } = await request.json();
 
   // Validate required fields
   if (!amount || !email) {
@@ -67,8 +67,12 @@ export async function POST(request) {
         },
       ],
       mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment?canceled=true${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ""}`,
+      success_url:
+        successUrl ||
+        `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:
+        cancelUrl ||
+        `${process.env.NEXT_PUBLIC_BASE_URL}/payment?canceled=true`,
       metadata: {
         discountCode: discountCode || "",
         widgetId: widgetId || "",

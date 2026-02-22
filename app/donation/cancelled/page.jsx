@@ -43,14 +43,9 @@ export default function DonationCancelledPage() {
                   }}
                   className="rounded-md bg-primary-red px-6 py-2 text-white transition-colors hover:bg-red-700"
                 >
-                  Go Back
+                  Back to Dashboard
                 </button>
-                <button
-                  onClick={() => router.push("/payment")}
-                  className="rounded-md border border-orange-300 bg-white px-6 py-2 text-orange-900 transition-colors hover:bg-orange-50"
-                >
-                  Try Again
-                </button>
+             
               </div>
             </div>
           </div>

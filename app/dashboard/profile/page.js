@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Settings() {
   const { authState } = useAuth();
@@ -469,6 +475,7 @@ export default function Settings() {
               ) : videos.length === 0 ? (
                 <p className="text-sm text-gray-500">You haven't uploaded any videos yet.</p>
               ) : (
+              <TooltipProvider>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {videos.map((v) => (
                     <div key={v.id} className="rounded-lg overflow-hidden border bg-white shadow-sm hover:shadow-md transition-shadow relative group">
@@ -494,66 +501,85 @@ export default function Settings() {
                         </div>
                       )}
                       <div className="absolute top-2 right-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            try {
-                              const response = await fetch(`/api/videos/${v.id}`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ isPublic: !v.isPublic })
-                              });
-                              if (response.ok) {
-                                setVideos(prev => prev.map(video => 
-                                  video.id === v.id ? { ...video, isPublic: !v.isPublic } : video
-                                ));
-                              }
-                            } catch (error) {
-                              console.error('Error toggling visibility:', error);
-                            }
-                          }}
-                          className="p-2 bg-white/90 rounded-full hover:bg-white shadow-md transition-all"
-                        >
-                          {v.isPublic !== false ? (
-                            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                          ) : (
-                            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                            </svg>
-                          )}
-                        </button>
-                        <button
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (confirm('Are you sure you want to delete this video?')) {
-                              try {
-                                const response = await fetch(`/api/videos/${v.id}`, { method: 'DELETE' });
-                                if (response.ok) {
-                                  setVideos(prev => prev.filter(video => video.id !== v.id));
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                try {
+                                  const response = await fetch(`/api/videos/${v.id}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ isPublic: !v.isPublic })
+                                  });
+                                  if (response.ok) {
+                                    setVideos(prev => prev.map(video => 
+                                      video.id === v.id ? { ...video, isPublic: !v.isPublic } : video
+                                    ));
+                                  }
+                                } catch (error) {
+                                  console.error('Error toggling visibility:', error);
                                 }
-                              } catch (error) {
-                                console.error('Error deleting video:', error);
-                              }
-                            }
-                          }}
-                          className="p-2 bg-white/90 rounded-full hover:bg-red-50 shadow-md transition-all"
-                        >
-                          <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                              }}
+                              className="p-2 bg-white/90 rounded-full hover:bg-white shadow-md transition-all"
+                            >
+                              {v.isPublic !== false ? (
+                                <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{v.isPublic !== false ? "Make video private" : "Make video public"}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (confirm('Are you sure you want to delete this video?')) {
+                                  try {
+                                    const response = await fetch(`/api/videos/${v.id}`, { method: 'DELETE' });
+                                    if (response.ok) {
+                                      setVideos(prev => prev.filter(video => video.id !== v.id));
+                                    }
+                                  } catch (error) {
+                                    console.error('Error deleting video:', error);
+                                  }
+                                }
+                              }}
+                              className="p-2 bg-white/90 rounded-full hover:bg-red-50 shadow-md transition-all"
+                            >
+                              <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete video</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                       <div className="p-3">
                         <div className="font-medium text-sm truncate mb-1">{v.fileName}</div>
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+                          Cohort {v.cohort} • Week {v.week} Day {v.day}
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
+              </TooltipProvider>
               )}
             </div>
           )}

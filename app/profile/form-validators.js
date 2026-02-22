@@ -67,6 +67,7 @@ export const validateState = (state) => {
 
 export const validateZipcode = (zipcode) => {
   if (!zipcode.trim()) return "Zipcode is required";
+  // Allow 5-6 digit zipcodes and 5+4 format
   if (!/^\d{5,6}(-\d{4})?$/.test(zipcode)) return "Please enter a valid zipcode";
   return "";
 };
