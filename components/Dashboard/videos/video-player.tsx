@@ -23,6 +23,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserProgress } from "@/actions/user-progress";
 import { calculateWeekAndDay } from "@/lib/calculateWeekAndDay";
+import { toast } from "sonner";
 
 
 export default function VideoPlayer() {
@@ -65,7 +66,7 @@ export default function VideoPlayer() {
       case 'copy':
         try {
           await navigator.clipboard.writeText(videoUrl);
-          alert('Link copied to clipboard!');
+          toast.success('Link copied to clipboard!');
         } catch (err) {
           console.error('Failed to copy:', err);
           const textArea = document.createElement('textarea');
@@ -74,7 +75,7 @@ export default function VideoPlayer() {
           textArea.select();
           document.execCommand('copy');
           document.body.removeChild(textArea);
-          alert('Link copied to clipboard!');
+          toast.success('Link copied to clipboard!');
         }
         break;
     }

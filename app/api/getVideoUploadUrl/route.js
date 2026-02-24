@@ -33,7 +33,7 @@ export async function POST(request) {
 
     if (filename) {
       // Extract extension from the original filename if available
-      const fileExtMatch = filename.match(/\.\+$/);
+      const fileExtMatch = filename.match(/\.[^.]+$/);
       if (fileExtMatch) {
         extension = fileExtMatch[0];
       } else if (contentType) {
@@ -69,10 +69,14 @@ export async function POST(request) {
     // Set Permissions and Expiry
     const sasPermissions = new BlobSASPermissions();
     sasPermissions.write = true; // Allow write permissions
+    sasPermissions.create = true; // Allow create permissions (needed for block blobs)
+    sasPermissions.add = true; // Allow add permissions
 
     const startDate = new Date();
-    const expiryDate = new Date(startDate);
-    expiryDate.setMinutes(startDate.getMinutes() + 30); // Token valid for 30mins
+    startDate.setMinutes(startDate.getMinutes() - 15); // Adjust for potential clock skew (15 mins back)
+    
+    const expiryDate = new Date();
+    expiryDate.setMinutes(expiryDate.getMinutes() + 60); // Token valid for 60mins
 
     // Generate SAS token
     const sasToken = generateBlobSASQueryParameters(
@@ -112,7 +116,7 @@ export const OPTIONS = async () => {
     {
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Acess-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       },
     },

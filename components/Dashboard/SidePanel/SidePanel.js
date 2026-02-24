@@ -15,6 +15,12 @@ import { FaCheck, FaChevronDown, FaChevronRight } from "react-icons/fa";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { IoLockClosed } from "react-icons/io5";
 import DiscussionSection from "./discussion-section";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function SidePanel() {
   const [open, setOpen] = React.useState(false);
@@ -307,12 +313,21 @@ export default function SidePanel() {
 
   return (
     <div className="flex justify-end">
-      <Button
-        onClick={() => toggleDrawer(true)}
-        className="h-12 w-12 justify-center rounded-xl bg-[#7D899D1A] text-[#717171] max-sm:h-8 max-sm:w-8 max-xs:h-6 max-xs:w-6"
-      >
-        <GiHamburgerMenu className="text-red-700" />
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => toggleDrawer(true)}
+              className="h-12 w-12 justify-center rounded-xl bg-[#7D899D1A] text-[#717171] max-sm:h-8 max-sm:w-8 max-xs:h-6 max-xs:w-6"
+            >
+              <GiHamburgerMenu className="text-red-700" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Open Sidebar</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <Drawer
         open={open}
         onClose={() => toggleDrawer(false)}

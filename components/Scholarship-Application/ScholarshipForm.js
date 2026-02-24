@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import Confirmation from "./FormSteps/Confirmation";
+import { toast } from "sonner";
 // Import Step Components
 import Step1PersonalInfo from "./FormSteps/Step1PersonalInfo";
 import Step2Discovery from "./FormSteps/Step2Discovery";
@@ -69,14 +70,14 @@ export default function ScholarshipForm() {
       }
 
       // Show success message and move to confirmation page
-      alert("Your application has been submitted successfully!");
+      toast.success("Your application has been submitted successfully!");
 
       // Move to confirmation step
       setStep(step + 1);
     } catch (error) {
       console.error("Error submitting form:", error);
       setSubmissionError(error.message);
-      alert(
+      toast.error(
         "Error: " +
           (error.message || "Failed to submit application. Please try again."),
       );

@@ -74,15 +74,14 @@ export default function Devotional({ params }) {
         setUserProgressData(null);
         return;
       }
-      if (!authState.isAuthenticated) {
-        setUserProgressData(null);
-        return;
-      }
       try {
         const result = await getCurrentUserWithProgress();
-
+        if (!result.success && result.error === "Not authenticated") {
+          setUserProgressData(null);
+          return;
+        }
         if (!result.success) {
-          throw new Error(result.error || "Failed to get user data");
+          throw new Error(result.error);
         }
         setUserProgressData(result);
       } catch (err) {
@@ -97,8 +96,13 @@ export default function Devotional({ params }) {
    */
   if (authState.loading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Loading devotional...</p>
+      <div className="mx-auto flex min-h-screen w-full max-w-[900px] flex-col items-center justify-center">
+        <div className="text-center">
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-primary-red border-t-transparent animate-spin"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -150,88 +154,80 @@ export default function Devotional({ params }) {
    */
 
   return (
-    <div className="min-h-screen w-full bg-gray-50">
-      {/* Main Container - Responsive padding and max-width */}
-      <div className="mx-auto w-full max-w-lg px-4 py-4 sm:max-w-2xl sm:px-6 sm:py-6 md:max-w-3xl md:px-8 md:py-8 lg:max-w-5xl lg:px-10 lg:py-10 xl:max-w-6xl xl:px-12">
-        {/* Back Button - Responsive sizing */}
-        <button
-          onClick={() => router.push("/dashboard")}
-          className="group mb-6 mt-4 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-700 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900 sm:px-4 sm:py-2 sm:text-base"
-        >
-          <svg
-            className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1 sm:h-5 sm:w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
+    <div className="mt-16 flex w-full flex-col justify-between px-4 py-4 sm:px-6 md:px-8 lg:px-12">
+      <div className="mt-4 sm:mt-6 md:mt-8 flex flex-col items-center">
+        <div className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl">
+          {/* Back Button */}
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="group mb-4 sm:mb-6 flex items-center gap-2 self-start rounded-lg px-3 py-2 sm:px-4 text-sm sm:text-base text-gray-700 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          <span className="font-medium">Back</span>
-        </button>
+            <svg
+              className="h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-200 group-hover:-translate-x-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            <span className="font-medium">Back to Dashboard</span>
+          </button>
 
-        {/* Content Container - Responsive spacing and layout */}
-        <div className="flex flex-col items-start rounded-lg bg-white p-4 shadow-sm sm:p-6 md:p-8">
-          {/* Title Section - Responsive spacing */}
-          <div className="flex flex-col items-start sm:mb-6 md:mb-8">
-            <Title
-              weekTitle={devotionalData.weekTitle}
-              dayTitle={devotionalData.dayTitle}
-              daySubtitle={devotionalData.daySubTitle}
-            />
-            {/* SubTitle Section - Responsive spacing */}
-            <div className="mb-4 mt-4 sm:mb-6">
+          <div className="mb-6 sm:mb-8 flex flex-col items-start bg-white">
+            <div className="mt-4 sm:mt-6 md:mt-8 w-full">
+              <Title
+                weekTitle={devotionalData.weekTitle}
+                dayTitle={devotionalData.dayTitle}
+                daySubtitle={devotionalData.daySubTitle}
+              />
+            </div>
+
+            <div className="mb-3 sm:mb-4 md:mb-6 mt-2 sm:mt-3 md:mt-4 w-full">
               <SubTitle
                 week={devotionalData.week}
                 day={devotionalData.day}
               />
             </div>
-          </div>
 
-          {/* Main Image - Responsive container */}
-          <div className="mb-6 flex h-auto w-full items-center justify-center overflow-hidden rounded-lg bg-gray-100 sm:mb-8 md:mb-10">
-            <MainImage videoId={devotionalData.videoId} />
-          </div>
+            <div className="flex w-full justify-center mb-4 sm:mb-6">
+              <div className="flex items-center justify-center w-full">
+                <MainImage videoId={devotionalData.videoId} />
+              </div>
+            </div>
 
-          {/* Quotes Section - Responsive spacing */}
-          <div className="mb-6 flex w-full justify-center sm:mb-8 md:mb-10">
-            <Quotes />
-          </div>
+            <div className="flex w-full justify-center mb-4 sm:mb-6">
+              <Quotes />
+            </div>
 
-          {/* Scriptures Section - Responsive spacing */}
-          <div className="mb-6 sm:mb-8 md:mb-10">
-            <ScripturesSection scriptures={devotionalData.Scriptures} />
-          </div>
+            <div className="mb-4 sm:mb-6 md:mb-8 flex w-full justify-center">
+              <ScripturesSection scriptures={devotionalData.Scriptures} />
+            </div>
 
-          {/* Reading Time - Responsive spacing */}
-          <div className="mb-6 sm:mb-8">
-            <ReadingTime devotionText={devotionalData.devotionText || ""} />
-          </div>
+            <div className="mt-2 sm:mt-3 md:mt-4 flex w-full">
+              <ReadingTime devotionText={devotionalData.devotionText || ""} />
+            </div>
 
-          {/* Main Lesson - Responsive spacing */}
-          <div className="mb-8 sm:mb-10 md:mb-12">
-            <MainLesson devotionText={devotionalData.devotionText || ""} />
-          </div>
+            <div className="mt-4 sm:mt-6 md:mt-8 flex w-full">
+              <MainLesson devotionText={devotionalData.devotionText || ""} />
+            </div>
 
-          {/* Reflection Box - Responsive spacing */}
-          <div className="mb-8 sm:mb-10 md:mb-12">
-            <ReflectionBox
-              reflectionQuestion={devotionalData.reflectionQuestion}
-            />
-          </div>
+            <div className="flex w-full flex-col items-center">
+              <div className="mt-6 sm:mt-8 md:mt-12 flex w-full justify-center">
+                <ReflectionBox
+                  reflectionQuestion={devotionalData.reflectionQuestion}
+                />
+              </div>
+            </div>
 
-          {/* Divider */}
-          <div className="my-6 xs:my-8 sm:my-10 md:my-12">
             <Divider />
-          </div>
 
-          {/* Reflection Form - Full width responsive */}
-          <div className="w-full">
+            {/* ReflectionTextBox */}
             <ReflectionProcessingForm
               devotionalDataId={devotionalData.id}
               devotionalNumberId={devotionalData.numberId}

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { signOutAction } from "@/actions/auth";
 import { useAuth } from "@/contexts/AuthContext";
-import { ChevronDown, LogOut, SquarePen, User } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { ChevronDown, LogOut, User } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,10 +17,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function UserMenu({ mobile }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const { authState, setAuthState } = useAuth();
+  const { authState, setAuthState, refreshAuthState } = useAuth();
 
-  // At this point, we know user is authenticated (dashboard handles the checks)
   const userInfo = authState.user;
 
   // Add null check to prevent errors during initial render
@@ -28,19 +29,34 @@ export default function UserMenu({ mobile }) {
   }
 
   // Handle logout
-  const handleLogout = () => {
-    console.log("Logging out...");
+  const handleLogout = async () => {
+    try {
+      console.log("Logging out...");
 
-    // Set signing out flag to differentiate from initial loading
-    setAuthState({
-      isAuthenticated: false,
-      user: null,
-      loading: true,
-      signingOut: true,
-    });
+      // Set signing out flag to differentiate from initial loading
+      setAuthState({
+        isAuthenticated: false,
+        user: null,
+        loading: true,
+        signingOut: true,
+      });
 
-    // Use signOut with callbackUrl to redirect to landing page
-    signOut({ callbackUrl: "/" });
+      // Perform server-side sign out
+      await signOutAction();
+
+      // Clear local storage manually to be safe
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("authState");
+        localStorage.removeItem("onboarding_completed"); // Optional: clear onboarding too if desired
+      }
+
+      // Force hard redirect to home page
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error logging out:", error);
+      // Force redirect even on error
+      window.location.href = "/";
+    }
   };
 
   // Get initials for avatar fallback
@@ -80,13 +96,7 @@ export default function UserMenu({ mobile }) {
           <span>Profile</span>
         </Link>
 
-        <Link
-          href="/dashboard/feedback"
-          className="flex items-center gap-2 rounded-md p-2 hover:bg-gray-100"
-        >
-          <SquarePen size={16} />
-          <span>Feedback</span>
-        </Link>
+
 
         <button
           onClick={handleLogout}
@@ -108,7 +118,7 @@ export default function UserMenu({ mobile }) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="flex items-center gap-2 px-2"
+          className="user-menu-trigger flex items-center gap-2 px-2"
         >
           <Avatar className="h-8 w-8">
             <AvatarImage
@@ -148,15 +158,7 @@ export default function UserMenu({ mobile }) {
           </Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
-          <Link
-            href="/dashboard/feedback"
-            className="flex cursor-pointer items-center"
-          >
-            <SquarePen className="mr-2 h-4 w-4" />
-            <span>Feedback</span>
-          </Link>
-        </DropdownMenuItem>
+
 
         <DropdownMenuSeparator />
 

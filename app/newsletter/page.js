@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -14,7 +14,6 @@ export default function ContactPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const { toast } = useToast();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -36,10 +35,8 @@ export default function ContactPage() {
 
       if (response.ok) {
         setIsSubmitted(true);
-        toast({
-          title: "You're now subscribed!",
-          description:
-            "You're now in the loop! Be on the lookout for our emails",
+        toast.success("You're now subscribed!", {
+          description: "You're now in the loop! Be on the lookout for our emails",
         });
         setFormData({ name: "", email: "", source: "30MMM CLEAN" });
       } else {
@@ -47,7 +44,7 @@ export default function ContactPage() {
       }
     } catch (error) {
       console.error("Failed to send subscribe. Please try again later.");
-      alert(`Error: ${error.message}. Please try again.`);
+      toast.error(`Error: ${error.message}. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }

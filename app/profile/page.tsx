@@ -5,6 +5,7 @@ import Image from "next/image";
 import ErrorMessage from "@/components/common/Forms/error-message";
 import CreateProfileBtn from "@/components/profile/create-profile-btn";
 import * as validators from "./form-validators";
+import { toast } from "sonner";
 
 export default function Profile() {
   const [firstTabActive, setFirstTabActive] = useState(true);
@@ -142,7 +143,7 @@ export default function Profile() {
     if (validateFirstTab()) {
       setFirstTabActive(false);
     } else {
-      alert("Please complete all fields on this tab before continuing");
+      toast.error("Please complete all fields on this tab before continuing");
     }
   };
 
