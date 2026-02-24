@@ -11,9 +11,11 @@ import MobileNavBar from "./mobile-nav-bar";
 const INTERNAL_PAGES = [
   "/dashboard",
   "/dashboard/profile",
-  // "/dashboard/settings",
   "/dashboard/videos",
 ];
+
+// internal pages where the internal navigation menu should NOT be shown
+const BLOCKED_ROUTES = ["/profile", "/payment?returnUrl=%2Fprofile"];
 
 export default function NavBar() {
   const [isMobile, setIsMobile] = useState(false);

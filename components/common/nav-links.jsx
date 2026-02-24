@@ -20,7 +20,6 @@ const INTERNAL_NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/videos", label: "Videos" },
   { href: "/dashboard/profile", label: "Profile" },
-  // { href: "/dashboard/settings", label: "Settings" },
 ];
 
 export default function NavLinks({
@@ -32,7 +31,8 @@ export default function NavLinks({
   const pathname = usePathname();
 
   // Choose which links to display
-  const links = isAuthenticated ? INTERNAL_NAV_LINKS : PUBLIC_NAV_LINKS;
+  const links =
+    isAuthenticated && showInternalMenu ? INTERNAL_NAV_LINKS : PUBLIC_NAV_LINKS;
 
   const linkClassName = (href) =>
     cn(

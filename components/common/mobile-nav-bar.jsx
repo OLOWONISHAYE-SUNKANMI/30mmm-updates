@@ -26,7 +26,7 @@ export default function MobileNavBar({
 
   return (
     <nav className="fixed left-0 right-0 top-0 z-50 bg-white shadow-sm backdrop-blur-sm">
-      <div className="mx-2 xs:mx-4 flex items-center justify-between p-3 xs:p-4 text-black">
+      <div className="mx-2 flex items-center justify-between p-3 text-black xs:mx-4 xs:p-4">
         {/* Left section: Logo */}
         <div className="flex items-center">
           <NavLogo />
@@ -56,20 +56,25 @@ export default function MobileNavBar({
               </SheetHeader>
               <div className="mt-6 flex flex-col gap-4">
                 {isAuthenticated ? (
-                  // Logged in mobile menu
-                  <>
-                    <UserMenu
-                      user={user}
-                      mobile
-                    />
-                    <NavLinks
-                      isAuthenticated={isAuthenticated}
-                      onLinkClick={closeSheet}
-                      isMobile={true}
-                      showInternalMenu={showInternalMenu}
-                    />
-                    {isAuthenticated && showInternalMenu && <SidePanel />}
-                  </>
+                  showInternalMenu ? (
+                    // Logged in mobile menu
+                    <>
+                      <UserMenu
+                        user={user}
+                        mobile
+                      />
+                      <NavLinks
+                        isAuthenticated={isAuthenticated}
+                        onLinkClick={closeSheet}
+                        isMobile={true}
+                        showInternalMenu={showInternalMenu}
+                      />
+                      {isAuthenticated && showInternalMenu && <SidePanel />}
+                    </>
+                  ) : (
+                    // if logged in but not able to see internal menu, display nothing
+                    <></>
+                  )
                 ) : (
                   // Logged out mobile menu
                   <>
