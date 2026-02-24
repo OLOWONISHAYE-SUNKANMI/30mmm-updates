@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function CreateProfileBtn({ formData, validateForm, errors, profileImage }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,7 +11,7 @@ export default function CreateProfileBtn({ formData, validateForm, errors, profi
 
     // Validate the entire form
     if (!validateForm()) {
-      alert("Please correct the errors before submitting");
+      toast.error("Please correct the errors before submitting");
       return;
     }
 
@@ -25,7 +26,7 @@ export default function CreateProfileBtn({ formData, validateForm, errors, profi
         const formDataToSend = new FormData();
         formDataToSend.append("profileData", JSON.stringify(formData));
         formDataToSend.append("profileImage", profileImage);
-        
+
         response = await fetch("/api/create-profile", {
           method: "POST",
           body: formDataToSend,
@@ -50,7 +51,7 @@ export default function CreateProfileBtn({ formData, validateForm, errors, profi
       router.push("/payment");
     } catch (error) {
       console.error("Error saving profile:", error);
-      alert("Error saving profile. Please try again.");
+      toast.error("Error saving profile. Please try again.");
       setIsLoading(false);
     }
   };

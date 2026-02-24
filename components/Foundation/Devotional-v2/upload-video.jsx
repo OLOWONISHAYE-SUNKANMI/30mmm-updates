@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { submitVideoReflection } from "@/actions/reflection-submission";
 import PostReflectionNavigationButtons from "@/components/Foundation/Devotional-v2/post-reflection-navigation";
+import { toast } from "sonner";
 
 function UploadVideo({
   week,
@@ -37,7 +38,7 @@ function UploadVideo({
     } else {
       setFile(null);
       setPreviewUrl(null);
-      alert("Please select a valid video file");
+      toast.error("Please select a valid video file");
     }
   };
 
@@ -81,7 +82,7 @@ function UploadVideo({
     e.preventDefault();
 
     if (!week || !day || !file || !firstName || !lastName || !cohort) {
-      alert("Please add all fields to submit this form successfully");
+      toast.error("Please add all fields to submit this form successfully");
       return;
     }
 
@@ -261,9 +262,8 @@ function UploadVideo({
             Upload Video:
           </label>
           <div
-            className={`relative mt-1 flex justify-center rounded-lg border-2 border-dashed ${
-              dragActive ? "border-primaryred bg-red-50" : "border-gray-300"
-            } px-6 pb-6 pt-5`}
+            className={`relative mt-1 flex justify-center rounded-lg border-2 border-dashed ${dragActive ? "border-primaryred bg-red-50" : "border-gray-300"
+              } px-6 pb-6 pt-5`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
@@ -401,17 +401,16 @@ function UploadVideo({
               !cohort ||
               isUploading
             }
-            className={`rounded-lg px-6 py-2 text-white transition-colors ${
-              !week ||
-              !day ||
-              !file ||
-              !firstName ||
-              !lastName ||
-              !cohort ||
-              isUploading
+            className={`rounded-lg px-6 py-2 text-white transition-colors ${!week ||
+                !day ||
+                !file ||
+                !firstName ||
+                !lastName ||
+                !cohort ||
+                isUploading
                 ? "cursor-not-allowed bg-gray-400"
                 : "bg-primaryred hover:bg-primaryred-800"
-            }`}
+              }`}
           >
             {isUploading ? "Uploading..." : "Upload Video"}
           </button>

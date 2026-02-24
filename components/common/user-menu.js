@@ -44,17 +44,18 @@ export default function UserMenu({ mobile }) {
       // Perform server-side sign out
       await signOutAction();
 
-      // Refresh auth state from server
-      await refreshAuthState();
+      // Clear local storage manually to be safe
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("authState");
+        localStorage.removeItem("onboarding_completed"); // Optional: clear onboarding too if desired
+      }
 
-      // Navigate to home
-      router.push("/");
-      router.refresh();
+      // Force hard redirect to home page
+      window.location.href = "/";
     } catch (error) {
       console.error("Error logging out:", error);
-
-      // Refresh auth state to get current status
-      await refreshAuthState();
+      // Force redirect even on error
+      window.location.href = "/";
     }
   };
 
@@ -117,7 +118,7 @@ export default function UserMenu({ mobile }) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="flex items-center gap-2 px-2"
+          className="user-menu-trigger flex items-center gap-2 px-2"
         >
           <Avatar className="h-8 w-8">
             <AvatarImage

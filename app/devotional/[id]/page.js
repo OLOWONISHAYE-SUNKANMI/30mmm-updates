@@ -96,8 +96,13 @@ export default function Devotional({ params }) {
    */
   if (authState.loading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Loading devotional...</p>
+      <div className="mx-auto flex min-h-screen w-full max-w-[900px] flex-col items-center justify-center">
+        <div className="text-center">
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-primary-red border-t-transparent animate-spin"></div>
+          </div>
+        </div>
       </div>
     );
   }

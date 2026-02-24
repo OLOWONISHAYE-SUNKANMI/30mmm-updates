@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -39,7 +41,7 @@ export default function ContactPage() {
         throw new Error("Failed to send message");
       }
     } catch (error) {
-      alert(`Error: ${error.message}. Please try again.`);
+      toast.error(`Error: ${error.message}. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }

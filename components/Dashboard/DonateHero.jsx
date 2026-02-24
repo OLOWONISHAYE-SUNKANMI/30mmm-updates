@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function DonateHero({ onClick }) {
   // State management - think of this as the component's "memory"
@@ -9,6 +11,7 @@ export default function DonateHero({ onClick }) {
   const [customAmount, setCustomAmount] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { authState } = useAuth();
 
   // Predefined amounts - easy to modify later
   const amounts = [50, 100, 200];
@@ -44,7 +47,7 @@ export default function DonateHero({ onClick }) {
       : selectedAmount;
 
     if (!finalAmount || finalAmount <= 0) {
-      alert("Please select or enter a valid donation amount");
+      toast.error("Please select or enter a valid donation amount");
       return;
     }
 
@@ -58,7 +61,9 @@ export default function DonateHero({ onClick }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          amount: finalAmount,
+          amount: finalAmount, // Send in dollars — API route converts to cents
+          email: authState.user.email, // Assuming authState is available
+          cancelUrl: window.location.href, // Redirect back to current page on cancel
           donationType: donationType,
           // Add any additional metadata you need
           metadata: {
@@ -78,7 +83,7 @@ export default function DonateHero({ onClick }) {
       }
     } catch (error) {
       console.error("Donation error:", error);
-      alert("There was an error processing your donation. Please try again.");
+      toast.error("There was an error processing your donation. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -103,9 +108,8 @@ export default function DonateHero({ onClick }) {
           {/* Donation Type Toggle */}
           <div className="inline-flex items-center justify-start gap-4 gap-x-2 justify-self-end rounded-[34px] bg-off-white/10">
             <div
-              className={`inline-flex h-[26px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[34px] px-2 py-1 transition-colors ${
-                donationType === "one-time" ? "bg-black" : "bg-transparent"
-              }`}
+              className={`inline-flex h-[26px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[34px] px-2 py-1 transition-colors ${donationType === "one-time" ? "bg-black" : "bg-transparent"
+                }`}
               onClick={() => setDonationType("one-time")}
             >
               <div className="px-1 text-xs font-medium leading-tight text-white">
@@ -113,11 +117,10 @@ export default function DonateHero({ onClick }) {
               </div>
             </div>
             <div
-              className={`inline-flex h-[26px] cursor-pointer flex-col items-start justify-center gap-1.5 px-0.5 transition-colors ${
-                donationType === "monthly"
-                  ? "rounded-[34px] bg-black"
-                  : "bg-transparent"
-              }`}
+              className={`inline-flex h-[26px] cursor-pointer flex-col items-start justify-center gap-1.5 px-0.5 transition-colors ${donationType === "monthly"
+                ? "rounded-[34px] bg-black"
+                : "bg-transparent"
+                }`}
               onClick={() => setDonationType("monthly")}
             >
               <div className="px-1 text-xs font-normal leading-tight text-white">
@@ -133,11 +136,10 @@ export default function DonateHero({ onClick }) {
               {amounts.map((amount) => (
                 <div
                   key={amount}
-                  className={`flex h-12 w-[90px] cursor-pointer items-center justify-center gap-2.5 rounded-[40px] border px-[31px] py-2 transition-colors max-md:hidden ${
-                    selectedAmount === amount && !showCustomInput
-                      ? "bg-white text-zinc-900"
-                      : "bg-[#865852] text-white hover:bg-[#754841]"
-                  }`}
+                  className={`flex h-12 w-[90px] cursor-pointer items-center justify-center gap-2.5 rounded-[40px] border px-[31px] py-2 transition-colors max-md:hidden ${selectedAmount === amount && !showCustomInput
+                    ? "bg-white text-zinc-900"
+                    : "bg-[#865852] text-white hover:bg-[#754841]"
+                    }`}
                   onClick={() => handleAmountSelect(amount)}
                 >
                   <div className="text-base font-normal leading-relaxed">
@@ -171,11 +173,10 @@ export default function DonateHero({ onClick }) {
 
               {/* Donate Button */}
               <div
-                className={`flex w-[152px] cursor-pointer items-center justify-center gap-2.5 self-stretch rounded-[40px] px-6 py-[11px] transition-colors ${
-                  isProcessing
-                    ? "cursor-not-allowed bg-red-800"
-                    : "bg-red-700 hover:bg-red-800"
-                }`}
+                className={`flex w-[152px] cursor-pointer items-center justify-center gap-2.5 self-stretch rounded-[40px] px-6 py-[11px] transition-colors ${isProcessing
+                  ? "cursor-not-allowed bg-red-800"
+                  : "bg-red-700 hover:bg-red-800"
+                  }`}
                 onClick={handleDonate}
                 disabled={isProcessing}
               >

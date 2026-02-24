@@ -17,6 +17,10 @@ export default function GoogleBtn({ isSignUp = true }) {
         `${isSignUp ? "Google Sign Up" : "Google Log In"} successful`,
       );
     } catch (error) {
+      // NEXT_REDIRECT is expected — Next.js throws it to perform the redirect
+      if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+        throw error;
+      }
       toast.error(`Error: ${error.message}`);
     }
   };
