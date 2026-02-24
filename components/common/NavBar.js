@@ -12,6 +12,7 @@ const INTERNAL_PAGES = [
   "/dashboard",
   "/dashboard/profile",
   "/dashboard/videos",
+  "/dashboard/feedback",
 ];
 
 for (let week = 1; week <= 5; week++) {
