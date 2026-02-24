@@ -33,7 +33,7 @@ export default function DesktopNavBar({
               <UserMenu user={user} />
             ) : (
               // if logged in but not able to see internal menu, display nothing
-              <div></div>
+              <AuthButtons />
             )
           ) : (
             <AuthButtons />
