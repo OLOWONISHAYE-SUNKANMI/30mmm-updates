@@ -14,6 +14,14 @@ const INTERNAL_PAGES = [
   "/dashboard/videos",
 ];
 
+for (let week = 1; week <= 5; week++) {
+  // Inner loop for the 7 days
+  for (let day = 1; day <= 7; day++) {
+    // Construct the URL and push it to the array
+    INTERNAL_PAGES.push(`/devotional/${week}-${day}`);
+  }
+}
+
 // internal pages where the internal navigation menu should NOT be shown
 const BLOCKED_ROUTES = ["/profile", "/payment?returnUrl=%2Fprofile"];
 
