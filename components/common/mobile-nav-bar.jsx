@@ -73,7 +73,7 @@ export default function MobileNavBar({
                     </>
                   ) : (
                     // if logged in but not able to see internal menu, display nothing
-                    <></>
+                    <AuthButtons />
                   )
                 ) : (
                   // Logged out mobile menu
