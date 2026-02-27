@@ -514,9 +514,14 @@ export default function Settings() {
                                     body: JSON.stringify({ isPublic: !v.isPublic })
                                   });
                                   if (response.ok) {
+                                    const newIsPublic = !v.isPublic;
                                     setVideos(prev => prev.map(video => 
-                                      video.id === v.id ? { ...video, isPublic: !v.isPublic } : video
+                                      video.id === v.id ? { ...video, isPublic: newIsPublic } : video
                                     ));
+                                    toast.success(newIsPublic !== false
+                                      ? "Video is now public and visible on the dashboard"
+                                      : "Video is now hidden from the dashboard"
+                                    );
                                   }
                                 } catch (error) {
                                   console.error('Error toggling visibility:', error);

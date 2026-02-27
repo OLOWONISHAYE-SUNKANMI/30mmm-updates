@@ -31,8 +31,8 @@ export async function GET(request: Request) {
       // If userId is provided, show all videos (public and private) for that user
       filteredVideos = videos;
     } else {
-      // Return ALL videos regardless of isPublic status
-      filteredVideos = videos;
+      // Only return public videos for the general feed (dashboard/videos)
+      filteredVideos = videos.filter(v => v.isPublic !== false);
     }
 
     console.log('Final filtered count:', filteredVideos.length);
@@ -48,19 +48,19 @@ export async function GET(request: Request) {
     const normalizeBlobUrl = (blobUrl: any): string => {
       // Handle null/undefined
       if (blobUrl === null || blobUrl === undefined) return '';
-      
+
       // Already a valid string
       if (typeof blobUrl === 'string') {
         return blobUrl.trim().length > 0 ? blobUrl.trim() : '';
       }
-      
+
       // Handle object - might be serialization issue
       if (typeof blobUrl === 'object') {
         // Try common object properties
         if (blobUrl.url && typeof blobUrl.url === 'string') return blobUrl.url.trim();
         if (blobUrl.href && typeof blobUrl.href === 'string') return blobUrl.href.trim();
         if (blobUrl.value && typeof blobUrl.value === 'string') return blobUrl.value.trim();
-        
+
         // Try to get any string property
         for (const key in blobUrl) {
           const val = blobUrl[key];
@@ -68,11 +68,11 @@ export async function GET(request: Request) {
             return val.trim();
           }
         }
-        
+
         // Empty object - return empty string
         return '';
       }
-      
+
       // For any other type, try to convert to string
       const strVal = String(blobUrl).trim();
       return strVal && strVal !== '[object Object]' ? strVal : '';
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
     }
 
     const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-    
+
     const videosWithReadUrls = await Promise.all(plainVideos.map(async (video) => {
       const normalizedBlobUrl = video.blobUrl;
 
@@ -119,22 +119,22 @@ export async function GET(request: Request) {
           .map(part => decodeURIComponent(part)); // Decode each path component
         const containerName = pathParts[0];
         const blobName = pathParts.slice(1).join('/');
-        
+
         console.log('Extracting blob path:', {
           originalUrl: normalizedBlobUrl,
           containerName,
           blobName,
           pathParts,
         });
-        
+
         const containerClient = blobServiceClient.getContainerClient(containerName);
         const blobClient = containerClient.getBlobClient(blobName);
-        
+
         const readUrl = await blobClient.generateSasUrl({
           permissions: BlobSASPermissions.parse('r'),
           expiresOn: new Date(Date.now() + 24 * 60 * 60 * 1000),
         });
-        
+
         console.log('Successfully generated SAS URL for video:', video.id);
         return { ...video, blobUrl: readUrl };
       } catch (error) {
