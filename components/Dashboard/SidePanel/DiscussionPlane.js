@@ -320,27 +320,9 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
         
         <div className="flex items-center space-x-2">
           {selectedTab === "comments" || selectedTab === "notes" ? (
-            <JoinConversationButton 
-              week={week} 
-              day={day} 
-              userId={userId}
-              devotionalDataId={devotionalDataId}
-              devotionalNumberId={devotionalNumberId}
-              onCommentAdded={(newItem, tabType) => {
-                if (tabType === "comment") {
-                  setComments(prev => [newItem, ...prev]);
-                  setSelectedTab("comments");
-                } else if (tabType === "note") {
-                  // If the Note submission returns valid reflection shape, push it, otherwise fetch
-                  if (newItem && newItem.id) {
-                    setNotes(prev => [newItem, ...prev]);
-                  }
-                  setSelectedTab("notes");
-                }
-              }} 
-            />
+              <SortByPill onSortChange={setSortOption} />    
           ) : null}
-          <SortByPill onSortChange={setSortOption} />
+        
         </div>
       </div>
 
@@ -370,6 +352,26 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
           )
         )}
       </div>
+
+      <JoinConversationButton 
+              week={week} 
+              day={day} 
+              userId={userId}
+              devotionalDataId={devotionalDataId}
+              devotionalNumberId={devotionalNumberId}
+              onCommentAdded={(newItem, tabType) => {
+                if (tabType === "comment") {
+                  setComments(prev => [newItem, ...prev]);
+                  setSelectedTab("comments");
+                } else if (tabType === "note") {
+                  // If the Note submission returns valid reflection shape, push it, otherwise fetch
+                  if (newItem && newItem.id) {
+                    setNotes(prev => [newItem, ...prev]);
+                  }
+                  setSelectedTab("notes");
+                }
+              }} 
+            />
     </div>
   );
 }
