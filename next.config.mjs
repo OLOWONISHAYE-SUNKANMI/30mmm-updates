@@ -19,6 +19,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "img.youtube.com",
       },
+      {
+        protocol: "https",
+        hostname: "cleanvideouploads.blob.core.windows.net",
+      },
     ],
   },
   env: {
