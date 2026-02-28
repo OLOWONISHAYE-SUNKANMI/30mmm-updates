@@ -23,10 +23,8 @@ export async function GET(request: NextRequest) {
         // Fetch top level comments (parentId is null)
         const comments = await prisma.comment.findMany({
             where: {
-                OR: [
-                    { week: { lt: week } },
-                    { week: week, day: { lte: day } }
-                ],
+                week: week,
+                day: day,
                 parentId: null
             },
             include: {
