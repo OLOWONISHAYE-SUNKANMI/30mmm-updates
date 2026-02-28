@@ -24,10 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { calculateWeekAndDay } from "@/lib/calculateWeekAndDay";
-import { useAuth } from "@/contexts/AuthContext";
-import { getUserProgress } from "@/actions/user-progress";
-import { calculateWeekAndDay } from "@/lib/calculateWeekAndDay";
-import { toast } from "sonner";
+
 
 
 export default function VideoPlayer() {
