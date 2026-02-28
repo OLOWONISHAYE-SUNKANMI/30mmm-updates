@@ -58,10 +58,8 @@ export async function GET(request: NextRequest) {
         // Fetch public reflections for the specific day
         const reflections = await prisma.reflectionResponse.findMany({
             where: {
-                OR: [
-                    { week: { lt: week } },
-                    { week: week, day: { lte: day } }
-                ],
+                week: week,
+                day: day,
                 isPublic: true // ONLY public
             },
             include: {

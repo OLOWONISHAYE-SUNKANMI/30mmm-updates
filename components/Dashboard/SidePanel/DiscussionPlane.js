@@ -8,6 +8,7 @@ import SortByPill from "./SortByPillBox";
 import JoinConversationButton from "./JoinConversationButton";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useDevotionalContext } from "@/contexts/DevotionalContext";
 
 export default function DiscussionPlane({ week, day, userId, devotionalDataId, devotionalNumberId }) {
   const [selectedTab, setSelectedTab] = useState("comments"); // 'comments' or 'notes'
@@ -23,6 +24,8 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
   const [repliesData, setRepliesData] = useState({}); // { commentId: [replies] }
 
   const router = useRouter();
+  const devotionalContext = useDevotionalContext();
+  const refreshNotesVersion = devotionalContext?.refreshNotesVersion;
 
   // Fetch comments
   useEffect(() => {
@@ -61,7 +64,7 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
       }
     };
     fetchNotes();
-  }, [week, day]);
+  }, [week, day, refreshNotesVersion]);
 
   // Sort function
   const sortItems = (items) => {
