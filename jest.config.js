@@ -16,6 +16,9 @@ const customJestConfig = {
     "**/__tests__/**/*.test.[jt]s?(x)",
     "**/?(*.)+(spec|test).[jt]s?(x)",
   ],
+  transformIgnorePatterns: [
+    "node_modules/(?!(next-auth)/)",
+  ],
   collectCoverageFrom: [
     "app/**/*.{js,jsx,ts,tsx}",
     "lib/**/*.{js,jsx,ts,tsx}",

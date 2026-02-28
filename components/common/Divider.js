@@ -2,8 +2,8 @@ import React from "react";
 
 export default function Divider() {
   return (
-    <div className="flex items-center justify-center w-full my-10 px-52 gap-x-5 ">
-      <hr className="w-5/6 border-[#E3E7ED] border" />
+    <div className="flex w-full items-center justify-center gap-2 px-0 xs:gap-3  sm:gap-4 md:gap-5">
+      <hr className="w-4/5 border border-[#E3E74D] xs:w-5/6 sm:w-full md:flex-1" />
     </div>
   );
 }

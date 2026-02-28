@@ -46,9 +46,9 @@ function ReflectionProcessingForm({
 
       // Check if the operation was successful
       // The Server Action returns an object with a success flag and either data or an error
-      if (!result.success) {
+      if (!result.success) 
         throw new Error(result.error);
-      }
+      
 
       setIsSuccess(true);
     } catch (err) {
@@ -69,7 +69,7 @@ function ReflectionProcessingForm({
   if (isSuccess) {
     return (
       <div className="w-full">
-        <div className="mb-4 rounded-lg bg-green-50 p-4 text-green-800">
+        <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-800 xs:p-4 xs:text-base sm:p-5">
           Your reflection has been saved successfully! Great work on completing
           today&apos;s devotional.
         </div>
@@ -83,19 +83,19 @@ function ReflectionProcessingForm({
     <div className="w-full">
       {/* Error messages are shown at the top so they're immediately visible */}
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">
+        <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800 xs:p-4 xs:text-base sm:p-5">
           {error}
         </div>
       )}
 
       <div className="w-full">
-        <label className="mb-4 block text-lg font-semibold text-gray-900">
+        <label className="mb-3 block text-sm font-semibold text-gray-900 xs:mb-4 xs:text-base sm:text-lg">
           Your Response: Text or Video
         </label>
 
         <button
           onClick={() => setIsVideo(!isVideo)}
-          className="relative h-14 w-80 rounded-lg border-2 border-gray-300 bg-white p-1 shadow-sm transition-all duration-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2"
+          className="relative h-12 w-full max-w-xs rounded-lg border-2 border-gray-300 bg-white p-1 shadow-sm transition-all duration-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 xs:h-13 sm:h-14 sm:max-w-sm"
         >
           {/* Sliding background */}
           <div
@@ -106,28 +106,28 @@ function ReflectionProcessingForm({
 
           {/* Text option */}
           <div
-            className={`relative z-10 flex h-11 w-1/2 items-center justify-center transition-all duration-200 ${
+            className={`relative z-10 flex h-10 w-1/2 items-center justify-center transition-all duration-200 xs:h-11 sm:h-12 ${
               !isVideo
                 ? "font-semibold text-white"
                 : "font-medium text-gray-600"
             }`}
           >
-            <span className="text-sm">📝 Text</span>
+            <span className="text-xs xs:text-sm">📝 Text</span>
           </div>
 
           {/* Video option */}
           <div
-            className={`absolute right-1 top-1 z-10 flex h-11 w-[calc(50%-0.25rem)] items-center justify-center transition-all duration-200 ${
+            className={`absolute right-1 top-1   z-10 flex h-10 w-[calc(50%-0.25rem)] items-center justify-center transition-all duration-200 xs:h-11 sm:h-12 ${
               isVideo ? "font-semibold text-white" : "font-medium text-gray-600"
             }`}
           >
-            <span className="text-sm">🎥 Video</span>
+            <span className="text-xs xs:text-sm">🎥 Video</span>
           </div>
         </button>
 
         {/* Status display */}
-        <div className="mb-6 mt-4">
-          <p className="text-sm text-gray-600">
+        <div className="mb-4 mt-3 xs:mb-5 xs:mt-4 sm:mb-6">
+          <p className="text-xs text-gray-600 xs:text-sm">
             Selected:{" "}
             <span className="font-semibold text-gray-900">
               {isVideo ? "Video" : "Text"} Submission
@@ -136,26 +136,27 @@ function ReflectionProcessingForm({
         </div>
 
         {!isVideo ? (
-          <div>
+          <div className="w-full">
             <textarea
               value={reflectionText}
               onChange={(e) => setReflectionText(e.target.value)}
-              rows={10}
+              rows={8}
               required={true}
               disabled={isSubmitting}
               placeholder="Enter your reflection..."
-              className="w-full resize-none rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-gray-900 transition-all duration-200 ease-in-out placeholder:text-gray-400 hover:border-gray-400 focus:border-primary-red focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full resize-none rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition-all duration-200 ease-in-out placeholder:text-gray-400 hover:border-gray-400 focus:border-primary-red focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 xs:px-4 xs:py-3 xs:text-base sm:rows-10"
             />
-            <div className="flex justify-center">
+            <div className="mt-4 flex justify-center xs:mt-5 sm:mt-6">
               <button
                 type="submit"
                 onClick={(e) => {
                   e.preventDefault();
                   onTextSubmit(reflectionText);
                 }}
-                className={`"cursor-not-allowed bg-gray-400" "bg-primaryred hover:bg-primaryred-800" rounded-lg bg-primary-red px-6 py-2 text-white transition-colors`}
+                disabled={isSubmitting}
+                className="w-full max-w-xs rounded-lg bg-primary-red px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50 xs:px-5 xs:py-2.5 xs:text-base sm:max-w-sm"
               >
-                Save Text Reflection
+                {isSubmitting ? "Saving..." : "Save Text Reflection"}
               </button>
             </div>
           </div>
@@ -177,7 +178,7 @@ function ReflectionProcessingForm({
             type="button"
             onClick={onSubmit}
             disabled={isSubmitting}
-            className="mx-auto mt-6 flex rounded-lg bg-primary-red px-6 py-3 font-semibold text-white transition-all duration-200 ease-in-out hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="mx-auto mt-4 flex w-full max-w-xs rounded-lg bg-primary-red px-4 py-2 text-sm font-semibold text-white transition-all duration-200 ease-in-out hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 xs:mt-5 xs:px-5 xs:py-2.5 xs:text-base sm:mt-6 sm:max-w-sm"
           >
             {isSubmitting ? "Submitting..." : "Submit Reflection"}
           </button>

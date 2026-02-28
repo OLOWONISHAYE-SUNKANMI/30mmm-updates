@@ -229,11 +229,12 @@ export async function signOutAction() {
   try {
     console.log("running signOutAction...");
 
-    // Sign out and redirect
-    await signOut({ redirectTo: "/" });
+    // Sign out (don't redirect here, let client handle it)
+    await signOut();
 
     // Revalidate all paths to clear cached data
-    revalidatePath("/", "page");
+    revalidatePath("/", "layout");
+    revalidatePath("/dashboard", "layout");
 
     return { success: true };
   } catch (error) {
@@ -241,7 +242,7 @@ export async function signOutAction() {
 
     // Handle NextAuth redirect errors (these are actually success cases)
     if (error?.message?.includes("NEXT_REDIRECT")) {
-      console.log("Redirecting after sign out");
+      console.log("Sign out successful");
       return { success: true };
     }
 

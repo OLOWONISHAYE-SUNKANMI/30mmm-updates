@@ -13,7 +13,7 @@ export default function AuthButtons({ onButtonClick }) {
     "/dashboard",
     "/sitemap",
     "/devotional",
-    "/settings",
+    // "/settings",
     "/payment",
     "/contact",
     "/donate",
