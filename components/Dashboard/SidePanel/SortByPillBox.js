@@ -1,14 +1,18 @@
+"use client";
 import React, { useState } from "react";
 
-export default function SortByPill() {
+export default function SortByPillBox({ onSortChange }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // To toggle dropdown visibility
-  const [selectedOption, setSelectedOption] = useState("Sort By"); // To store the selected sort option
+  const [selectedOption, setSelectedOption] = useState("Most Recent"); // Default sort option
 
   const options = ["Most Liked", "Most Replies", "Most Recent", "Oldest"]; // Sorting options
 
   const handleOptionClick = (option) => {
     setSelectedOption(option);
     setIsDropdownOpen(false); // Close dropdown after selecting an option
+    if (onSortChange) {
+      onSortChange(option);
+    }
   };
 
   return (
@@ -18,7 +22,7 @@ export default function SortByPill() {
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         className="inline-flex items-center justify-between px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-full shadow-lg hover:bg-gray-300"
       >
-        {selectedOption}
+        <span>{selectedOption === "Sort By" ? "Sort By" : `Sort: ${selectedOption}`}</span>
         <svg
           className={`w-5 h-5 ml-2 transition-transform ${
             isDropdownOpen ? "rotate-180" : "rotate-0"
@@ -39,12 +43,12 @@ export default function SortByPill() {
 
       {/* Dropdown Menu */}
       {isDropdownOpen && (
-        <div className="absolute z-10 w-48 mt-2 bg-white rounded-md shadow-lg">
+        <div className="absolute z-10 w-48 mt-2 bg-white rounded-md shadow-lg right-0">
           <ul className="py-1">
             {options.map((option) => (
               <li
                 key={option}
-                className="block px-4 py-2 text-gray-700 cursor-pointer hover:bg-gray-100"
+                className={`block px-4 py-2 text-gray-700 cursor-pointer hover:bg-gray-100 ${selectedOption === option ? "font-bold bg-gray-50" : ""}`}
                 onClick={() => handleOptionClick(option)}
               >
                 {option}

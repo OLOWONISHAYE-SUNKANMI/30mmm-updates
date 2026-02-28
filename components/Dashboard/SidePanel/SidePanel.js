@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { getDevotionalUrl, getWeekTitlesWithDays } from "@/actions/devotional";
+import { getDevotionalUrl, getWeekTitlesWithDays, getDevotionalById } from "@/actions/devotional";
 import { getUserProgress } from "@/actions/user-progress";
-import { comments, notes } from "@/sample-data/DiscussionData";
+import { useDevotionalContext } from "@/contexts/DevotionalContext";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Collapse from "@mui/material/Collapse";
@@ -27,9 +27,28 @@ export default function SidePanel() {
   const [weeks, setWeeks] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [expandedWeeks, setExpandedWeeks] = React.useState(new Set());
+  const [progressWeek, setProgressWeek] = React.useState(null);
+  const [progressDay, setProgressDay] = React.useState(null);
+  
+  // Track IDs for the DiscussionPlane / JoinConversationButton Note submission
+  const [currentDevotionalDataId, setCurrentDevotionalDataId] = React.useState(null);
+  const [currentDevotionalNumberId, setCurrentDevotionalNumberId] = React.useState(null);
+
   const router = useRouter();
   const { authState } = useAuth();
+  const { week, day, devotionalDataId, devotionalNumberId } = useDevotionalContext();
   const userId = authState.user?.id;
+
+  console.log("SidePanel Render Props:", {
+    contextWeek: week,
+    contextDay: day,
+    contextDataId: devotionalDataId,
+    contextNumId: devotionalNumberId,
+    fallbackDataId: currentDevotionalDataId,
+    fallbackNumId: currentDevotionalNumberId,
+    progressWeek: progressWeek,
+    progressDay: progressDay
+  });
 
   React.useEffect(() => {
     const loadDevotionalsWithProgress = async () => {
@@ -52,6 +71,31 @@ export default function SidePanel() {
         const userProgress = progressResult.success
           ? progressResult.progress || progressResult.userProgress
           : null;
+
+        if (userProgress) {
+          setProgressWeek(userProgress.currentWeek);
+          
+          // userProgress.currentDay is 1-35, but we need relative day 1-7 for DB queries
+          const relativeDay = ((userProgress.currentDay - 1) % 7) + 1;
+          setProgressDay(relativeDay);
+          
+          // If we aren't getting context IDs from the page, fetch them for the current progress
+          if (!devotionalDataId || !devotionalNumberId) {
+            try {
+              const fetchIdStr = `${userProgress.currentWeek}-${relativeDay}`;
+              console.log("SidePanel Fetching Fallback Devotional for:", fetchIdStr);
+              const fallbackDevo = await getDevotionalById(fetchIdStr);
+              console.log("SidePanel Fallback Result:", fallbackDevo);
+              if (fallbackDevo.success && fallbackDevo.devotional) {
+                setCurrentDevotionalDataId(fallbackDevo.devotional.id);
+                setCurrentDevotionalNumberId(fallbackDevo.devotional.numberId);
+                console.log("SidePanel Saved Fallback IDs:", fallbackDevo.devotional.id, fallbackDevo.devotional.numberId);
+              }
+            } catch (err) {
+              console.error("Failed to load fallback Devotional IDs", err);
+            }
+          }
+        }
 
         const processedWeeks = devotionalsResult.weekTitles.map((weekData) => {
           const weekNum = weekData.week;
@@ -127,7 +171,7 @@ export default function SidePanel() {
     };
 
     loadDevotionalsWithProgress();
-  }, [userId, authState.isAuthenticated]);
+  }, [userId, authState.isAuthenticated, devotionalDataId, devotionalNumberId]);
 
   const toggleWeekExpansion = (weekId) => {
     setExpandedWeeks((prev) => {
@@ -304,8 +348,11 @@ export default function SidePanel() {
         <Divider />
 
         <DiscussionSection
-          comments={comments}
-          notes={notes}
+          week={week || progressWeek}
+          day={day || progressDay}
+          userId={userId}
+          devotionalDataId={devotionalDataId || currentDevotionalDataId} 
+          devotionalNumberId={devotionalNumberId || currentDevotionalNumberId} 
         />
       </div>
     </Box>

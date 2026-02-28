@@ -2,7 +2,7 @@ import React from "react";
 import DiscussionPlane from "./DiscussionPlane";
 import JoinConversationButton from "./JoinConversationButton";
 
-function DiscussionSection({ comments, notes }) {
+function DiscussionSection({ week, day, userId, devotionalDataId, devotionalNumberId }) {
   return (
     <div>
       {" "}
@@ -12,13 +12,14 @@ function DiscussionSection({ comments, notes }) {
       </div>
       <div className="mx-0 flex flex-row items-center justify-between">
         <DiscussionPlane
-          comments={comments}
-          notes={notes}
+          week={week}
+          day={day}
+          userId={userId}
+          devotionalDataId={devotionalDataId}
+          devotionalNumberId={devotionalNumberId}
         />
       </div>
-      <div className="mt-4 flex items-center justify-center">
-        <JoinConversationButton />
-      </div>
+
     </div>
   );
 }

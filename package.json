@@ -50,6 +50,7 @@
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "db": "file:generated/client",
     "dotenv": "^17.2.3",
     "eslint-config-next": "^15.5.4",
