@@ -1,6 +1,39 @@
 // Add custom jest matchers from jest-dom
 import "@testing-library/jest-dom";
 
+// Suppress act() and test warnings in console output
+const originalError = console.error;
+const originalLog = console.log;
+
+beforeAll(() => {
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      (args[0].includes('Not wrapped in act') ||
+        args[0].includes('inside a test was not wrapped in act') ||
+        args[0].includes('Error fetching user progress'))
+    ) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+
+  console.log = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('DashboardProvider - using default progress')
+    ) {
+      return;
+    }
+    originalLog.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+  console.log = originalLog;
+});
+
 // Mock TextEncoder/TextDecoder for Node.js environment
 const { TextEncoder, TextDecoder } = require('util');
 global.TextEncoder = TextEncoder;

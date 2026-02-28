@@ -139,3 +139,9 @@ I created a page with a widget for making a donation based on different discount
 codes. This was originally implemented with a widget from a company called
 Pledge; I'd like this to be implemented with Stripe now. Can you revise this
 component to work with a Stripe Account?
+
+---
+
+## Content
+
+Adding text to force pipeline deployment
