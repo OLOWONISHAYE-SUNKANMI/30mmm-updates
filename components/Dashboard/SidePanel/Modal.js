@@ -44,7 +44,7 @@ export default function Modal({ isOpen, onClose, onSubmit, isSubmitting }) {
           <button
             className={`pb-2 px-1 font-medium transition-colors border-b-2 ${
               activeTab === "comment"
-                ? "border-blue-500 text-blue-600"
+                ? "border-[#8B2A28] text-[#AF3634]"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
             onClick={() => setActiveTab("comment")}
@@ -54,7 +54,7 @@ export default function Modal({ isOpen, onClose, onSubmit, isSubmitting }) {
           <button
             className={`pb-2 px-1 font-medium transition-colors border-b-2 ${
               activeTab === "note"
-                ? "border-blue-500 text-blue-600"
+                ? "border-[#8B2A28] text-[#AF3634]"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
             onClick={() => setActiveTab("note")}
@@ -90,7 +90,7 @@ export default function Modal({ isOpen, onClose, onSubmit, isSubmitting }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-300 transition-colors shadow-sm"
+            className="px-5 py-2 text-sm font-medium text-white bg-[#AF3634] rounded-md hover:bg-[#8B2A28] disabled:bg-[#AF3634] transition-colors shadow-sm"
           >
             {isSubmitting 
               ? "Submitting..." 
