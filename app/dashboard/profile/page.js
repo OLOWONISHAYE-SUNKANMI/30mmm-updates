@@ -707,7 +707,7 @@ export default function Settings() {
                         </Tooltip>
                       </div>
                       <div className="p-3">
-                        <div className="font-medium text-sm truncate mb-1 text-blue-700 uppercase tracking-wider text-[10px] font-bold">Text Submission</div>
+                        <div className="font-medium text-sm truncate mb-1 text-[#8B2A28] uppercase tracking-wider text-[10px] font-bold">Text Submission</div>
                         <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
                           Week {r.week} Day {r.day}
                         </div>

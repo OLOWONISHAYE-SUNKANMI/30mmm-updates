@@ -224,7 +224,7 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
           <div className="flex space-x-6 text-sm">
             <button 
               onClick={() => handleLike(item, type)}
-              className={`flex items-center space-x-1 hover:text-blue-500 ${item.hasLiked ? 'text-blue-600' : 'text-gray-600'}`}
+              className={`flex items-center space-x-1 hover:text-[#8B2A28] ${item.hasLiked ? 'text-[#8B2A28]' : 'text-gray-600'}`}
             >
               <FaThumbsUp />
               <span>{item.likesCount || 0}</span>
@@ -233,7 +233,7 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
             {isComment && !isReply && (
               <button 
                 onClick={() => setReplyingTo(replyingTo === item.id ? null : item.id)}
-                className="flex items-center space-x-1 text-gray-600 hover:text-blue-500"
+                className="flex items-center space-x-1 text-gray-600 hover:text-[#8B2A28]"
               >
                 <FaReply />
                 <span>Reply</span>
@@ -243,7 +243,7 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
             {isComment && !isReply && item.repliesCount > 0 && (
               <button 
                 onClick={() => toggleReplies(item.id)}
-                className="text-blue-500 hover:underline text-xs ml-auto"
+                className="text-[#8B2A28] hover:underline text-xs ml-auto"
               >
                 {expandedReplies.has(item.id) ? 'Hide Replies' : `View ${item.repliesCount} Replies`}
               </button>
@@ -257,7 +257,7 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="Write a reply..."
-                className="w-full p-2 text-sm border border-gray-300 rounded-md"
+                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B2A28] focus:border-transparent transition-all resize-none" 
                 rows="2"
               />
               <div className="flex justify-end space-x-2">
@@ -269,7 +269,7 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
                 </button>
                 <button 
                   onClick={() => submitReply(item.id)}
-                  className="px-3 py-1 text-xs text-white bg-blue-500 rounded hover:bg-blue-600"
+                  className="px-3 py-1 text-xs text-white bg-[#8B2A28] rounded hover:bg-[#AF3634]"
                 >
                   Post
                 </button>

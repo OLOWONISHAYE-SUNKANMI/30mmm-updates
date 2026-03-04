@@ -74,7 +74,7 @@ export default function Modal({ isOpen, onClose, onSubmit, isSubmitting }) {
                 ? "Share your thoughts on today's devotional..."
                 : "Write your reflection note for today..."
             }
-            className="w-full p-4 text-sm md:text-base bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+            className="w-full p-4 text-sm md:text-base bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B2A28] focus:border-transparent transition-all resize-none"
             required
             disabled={isSubmitting}
           ></textarea>
