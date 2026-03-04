@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/tooltip";
 import { calculateWeekAndDay } from "@/lib/calculateWeekAndDay";
 
+
+
 export default function VideoPlayer() {
   const { authState } = useAuth();
   const [videos, setVideos] = useState<any[]>([]);
@@ -428,26 +430,20 @@ export default function VideoPlayer() {
             <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
             <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary-red border-t-transparent"></div>
           </div>
-          <p className="text-descriptions-grey text-lg font-medium">
-            Loading videos...
-          </p>
+          <p className="text-descriptions-grey text-lg font-medium">Loading videos...</p>
         </div>
       </div>
     );
   }
 
-  const validVideos = videos.filter((video) => !brokenVideoIds.has(video.id));
+  const validVideos = videos.filter(video => !brokenVideoIds.has(video.id));
 
   if (validVideos.length === 0) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-[900px] flex-col items-center justify-center">
         <div className="text-center">
-          <p className="text-lg font-medium text-gray-600">
-            No videos available
-          </p>
-          <p className="mt-2 text-sm text-gray-500">
-            Videos will appear here once they are uploaded.
-          </p>
+          <p className="text-gray-600 text-lg font-medium">No videos available</p>
+          <p className="text-gray-500 text-sm mt-2">Videos will appear here once they are uploaded.</p>
         </div>
       </div>
     );
@@ -466,11 +462,10 @@ export default function VideoPlayer() {
             {validVideos.map((video, index) => (
               <div
                 key={video.id}
-                className={`absolute left-0 top-0 h-full w-full transition-opacity duration-300 ${
-                  index === currentVideoIndex
-                    ? "z-10 opacity-100"
-                    : "z-0 opacity-0"
-                }`}
+                className={`absolute left-0 top-0 h-full w-full transition-opacity duration-300 ${index === currentVideoIndex
+                  ? "z-10 opacity-100"
+                  : "z-0 opacity-0"
+                  }`}
               >
                 {video.blobUrl &&
                 typeof video.blobUrl === "string" &&

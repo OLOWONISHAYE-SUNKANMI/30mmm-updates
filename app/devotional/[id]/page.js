@@ -2,11 +2,11 @@
 
 "use client";
 
-import React, { use, useEffect, useState } from "react";
+import React, { use, useEffect, useState, useCallback } from "react";
 import { getCurrentUserWithProgress } from "@/actions/dashboard";
 import { getDevotionalById } from "@/actions/devotional";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Divider from "@/components/common/Divider";
 import ReflectionProcessingForm from "@/components/Foundation/Devotional-v2/reflection-processing-form";
 import MainImage from "@/components/Foundation/MainImage";
@@ -17,15 +17,21 @@ import ReflectionBox from "@/components/Foundation/ReflectionBox";
 import ScripturesSection from "@/components/Foundation/ScripturesSection";
 import SubTitle from "@/components/Foundation/SubTitle";
 import Title from "@/components/Foundation/Title";
+import { useDevotionalContext } from "@/contexts/DevotionalContext";
 
 export default function Devotional({ params }) {
+  return <DevotionalContent params={params} />;
+}
+
+function DevotionalContent({ params }) {
   /**
    * Hooks and contexts
    */
   const unwrappedParams = use(params);
   const { authState } = useAuth();
   const router = useRouter();
-  const devotionalId = unwrappedParams.id;
+  const idStr = unwrappedParams?.id;
+  const { setContext, week: contextWeek, day: contextDay, devotionalDataId: contextDataId, devotionalNumberId: contextNumId } = useDevotionalContext();
 
   /**
    * Data and State Management
@@ -38,31 +44,53 @@ export default function Devotional({ params }) {
   /**
    * Effects and Data Fetching
    */
-  useEffect(() => {
-    const fetchDevotional = async () => {
-      if (devotionalId) {
-        try {
-          setLoading(true);
-          setError(null);
+  const fetchDevotional = useCallback(async () => {
+    if (!idStr || authState.isLoading) {
+      return;
+    }
 
-          const result = await getDevotionalById(devotionalId);
+    try {
+      setLoading(true);
+      setError(null);
 
-          if (!result.success) {
-            throw new Error(result.error);
-          }
+      const result = await getDevotionalById(idStr);
 
-          setDevotionalData(result.devotional);
-        } catch (err) {
-          console.error("Error loading devotional:", err);
-          setError(err.message);
-        } finally {
-          setLoading(false);
-        }
+      if (!result.success) {
+        throw new Error(result.error || "Devotional fetch failed");
       }
-    };
 
+      setDevotionalData(result.devotional);
+    } catch (err) {
+      console.error("Error loading devotional:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [idStr, authState.isLoading]);
+
+  useEffect(() => {
     fetchDevotional();
-  }, [devotionalId]);
+  }, [fetchDevotional]);
+
+  // Update SidePanel context when devotional loads
+  useEffect(() => {
+    if (devotionalData?.week && devotionalData?.day) {
+      // Only set if different to avoid infinite re-renders
+      if (
+        contextWeek !== devotionalData.week || 
+        contextDay !== devotionalData.day ||
+        contextDataId !== devotionalData.id ||
+        contextNumId !== devotionalData.numberId
+      ) {
+        setContext(
+          devotionalData.week, 
+          devotionalData.day, 
+          devotionalData.id, 
+          devotionalData.numberId
+        );
+      }
+    }
+  }, [devotionalData?.week, devotionalData?.day, devotionalData?.id, devotionalData?.numberId, contextWeek, contextDay, contextDataId, contextNumId, setContext]);
 
   /**
    * User Progress Data Fetching

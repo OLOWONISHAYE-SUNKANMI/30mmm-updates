@@ -17,7 +17,10 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [videos, setVideos] = useState([]);
   const [videosLoading, setVideosLoading] = useState(true);
+  const [reflections, setReflections] = useState([]);
+  const [reflectionsLoading, setReflectionsLoading] = useState(true);
   const [showUploads, setShowUploads] = useState(false);
+  const [selectedReflection, setSelectedReflection] = useState(null); // For modal
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
@@ -113,7 +116,32 @@ export default function Settings() {
       }
     };
 
+    const fetchReflections = async () => {
+      if (authState.isAuthenticated && authState.user?.id) {
+        setReflectionsLoading(true);
+        try {
+          // Fetch user's own text responses.
+          // Note: GET /api/reflections?userId=... doesn't filter purely by isPublic in the backend logic anymore if we pass userId? 
+          // Wait, the API GET /api/reflections?userId=X only returns isPublic=true. I need to get ALL of the user's responses for their profile.
+          // Actually, let's fix the API to return all for the owner, or I'll just adjust the UI to use the existing data if it's there.
+          // In /api/reflections/route.ts, we currently fixed it to GET public ones. Let's send a request and see what we get.
+          const res = await fetch(`/api/reflections?userId=${authState.user.id}&all=true`); 
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              setReflections(data);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching reflections:", error);
+        } finally {
+          setReflectionsLoading(false);
+        }
+      }
+    };
+
     fetchVideos();
+    fetchReflections();
   }, [authState.isAuthenticated, authState.user?.id]);
 
   const handleInputChange = (e) => {
@@ -437,7 +465,7 @@ export default function Settings() {
             </button>
           </div>
 
-          {/* Toggle for Display Videos on Profile */}
+          {/* Toggle for Display Submissions on Profile */}
           <div className="w-full max-w-4xl mt-6 px-2 2xs:px-4">
             <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
               <div className="flex items-center gap-3">
@@ -446,8 +474,8 @@ export default function Settings() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
                 <div>
-                  <div className="font-semibold text-sm 2xs:text-base">Display Videos on Profile</div>
-                  <div className="text-xs text-gray-500">Your videos are visible to others</div>
+                  <div className="font-semibold text-sm 2xs:text-base">Display submissions on Profile</div>
+                  <div className="text-xs text-gray-500">Your submissions are visible to others</div>
                 </div>
               </div>
               <button
@@ -467,16 +495,20 @@ export default function Settings() {
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
                 </svg>
-                <h2 className="text-lg 2xs:text-xl font-semibold">My Videos</h2>
-                <span className="text-sm text-gray-500">({videos.length})</span>
+                <h2 className="text-lg 2xs:text-xl font-semibold">My Submissions</h2>
+                <span className="text-sm text-gray-500">({videos.length + reflections.length})</span>
               </div>
-              {videosLoading ? (
-                <p>Loading uploads...</p>
-              ) : videos.length === 0 ? (
-                <p className="text-sm text-gray-500">You haven't uploaded any videos yet.</p>
+              {(videosLoading || reflectionsLoading) ? (
+                <p>Loading submissions...</p>
+              ) : (videos.length === 0 && reflections.length === 0) ? (
+                <p className="text-sm text-gray-500">You haven't submitted any responses yet.</p>
               ) : (
               <TooltipProvider>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-6">
+                  {videos.length > 0 && (
+                    <div>
+                      <h3 className="text-md font-semibold mb-3 border-b pb-2 text-gray-800">Video Submissions ({videos.length})</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {videos.map((v) => (
                     <div key={v.id} className="rounded-lg overflow-hidden border bg-white shadow-sm hover:shadow-md transition-shadow relative group">
                       {v.blobUrl && (
@@ -576,13 +608,115 @@ export default function Settings() {
                         </Tooltip>
                       </div>
                       <div className="p-3">
-                        <div className="font-medium text-sm truncate mb-1">{v.fileName}</div>
+                        <div className="font-medium text-sm truncate mb-1 text-red-700 uppercase tracking-wider text-[10px] font-bold">Video Submission</div>
                         <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
-                          Cohort {v.cohort} • Week {v.week} Day {v.day}
+                          Week {v.week} Day {v.day}
                         </div>
                       </div>
                     </div>
                   ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Text Reflections */}
+                  {reflections.length > 0 && (
+                    <div>
+                      <h3 className="text-md font-semibold mb-3 border-b pb-2 text-gray-800 mt-2">Text Submissions ({reflections.length})</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {reflections.map((r) => (
+                          <div key={r.id} className="rounded-lg overflow-hidden border bg-white shadow-sm hover:shadow-md transition-shadow relative group cursor-pointer" onClick={() => setSelectedReflection(r)}>
+                      <div className="w-full aspect-video bg-gray-50 p-4 overflow-hidden relative">
+                        <svg className="w-8 h-8 text-gray-300 absolute top-4 right-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
+                        <p className="text-sm text-gray-700 italic line-clamp-4">"{r.response}"</p>
+                      </div>
+                      
+                      <div className="absolute top-2 right-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                try {
+                                  const response = await fetch(`/api/reflections/${r.id}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ isPublic: !r.isPublic })
+                                  });
+                                  if (response.ok) {
+                                    const newIsPublic = !r.isPublic;
+                                    setReflections(prev => prev.map(ref => 
+                                      ref.id === r.id ? { ...ref, isPublic: newIsPublic } : ref
+                                    ));
+                                    toast.success(newIsPublic !== false
+                                      ? "Response is now public and visible on the dashboard"
+                                      : "Response is now hidden from the dashboard"
+                                    );
+                                  }
+                                } catch (error) {
+                                  console.error('Error toggling visibility:', error);
+                                }
+                              }}
+                              className="p-2 bg-white/90 rounded-full hover:bg-white shadow-md transition-all"
+                            >
+                              {r.isPublic !== false ? (
+                                <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{r.isPublic !== false ? "Make response private" : "Make response public"}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (confirm('Are you sure you want to delete this text response?')) {
+                                  try {
+                                    const response = await fetch(`/api/reflections/${r.id}`, { method: 'DELETE' });
+                                    if (response.ok) {
+                                      setReflections(prev => prev.filter(ref => ref.id !== r.id));
+                                    }
+                                  } catch (error) {
+                                    console.error('Error deleting reflection:', error);
+                                  }
+                                }
+                              }}
+                              className="p-2 bg-white/90 rounded-full hover:bg-red-50 shadow-md transition-all"
+                            >
+                              <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete response</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="p-3">
+                        <div className="font-medium text-sm truncate mb-1 text-[#8B2A28] uppercase tracking-wider text-[10px] font-bold">Text Submission</div>
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+                          Week {r.week} Day {r.day}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </TooltipProvider>
               )}
@@ -590,6 +724,38 @@ export default function Settings() {
           )}
         </div>
       </div>
+
+      {/* Full Text Response Modal */}
+      {selectedReflection && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={() => setSelectedReflection(null)}>
+          <div className="w-full max-w-2xl p-6 bg-white rounded-2xl shadow-xl transform transition-all" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4 pb-4 border-b">
+              <h2 className="text-xl font-bold text-gray-800">
+                Text Submission (Week {selectedReflection.week} Day {selectedReflection.day})
+              </h2>
+              <button
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-100 rounded-full transition-colors"
+                onClick={() => setSelectedReflection(null)}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-base">
+                {selectedReflection.response}
+              </p>
+            </div>
+            <div className="mt-6 pt-4 border-t flex justify-end">
+              <button 
+                onClick={() => setSelectedReflection(null)}
+                className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

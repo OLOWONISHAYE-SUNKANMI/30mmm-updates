@@ -30,7 +30,7 @@ export default function NavBar() {
   const [isMobile, setIsMobile] = useState(false);
   const { authState } = useAuth();
   const pathname = usePathname();
-  const showInternalMenu = INTERNAL_PAGES.includes(pathname);
+  const showInternalMenu = INTERNAL_PAGES.includes(pathname) || pathname?.startsWith('/devotional');
 
   useEffect(() => {
     const checkMobile = () => {
