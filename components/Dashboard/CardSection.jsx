@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getAllDevotionals } from "@/actions/devotional";
 import { getUserProgress } from "@/actions/user-progress";
 import { FaChevronDown, FaRegCalendarAlt } from "react-icons/fa";
-import WeekCards from "./WeekCards";
+import WeekCards from "@/components/Dashboard/WeekCards";
 
 export default function CardSection({ userId }) {
   const [userProgress, setUserProgress] = useState(null);

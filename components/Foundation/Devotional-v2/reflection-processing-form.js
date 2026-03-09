@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useDevotionalContext } from "@/contexts/DevotionalContext";
 import { submitTextReflection } from "@/actions/reflection-submission";
 import PostReflectionNavigationButtons from "@/components/Foundation/Devotional-v2/post-reflection-navigation";
 import UploadVideo from "@/components/Foundation/Devotional-v2/upload-video";
@@ -22,6 +23,8 @@ function ReflectionProcessingForm({
   const [isSuccess, setIsSuccess] = useState(false);
   const isSubmitted = false;
   const [isVideo, setIsVideo] = useState(true);
+  
+  const devotionalContext = useDevotionalContext();
 
   const onTextSubmit = async (reflectionText) => {
     // trim reflection text to avoid empty submissions
@@ -48,6 +51,10 @@ function ReflectionProcessingForm({
       // The Server Action returns an object with a success flag and either data or an error
       if (!result.success) {
         throw new Error(result.error);
+      }
+
+      if (devotionalContext?.triggerNoteRefresh) {
+        devotionalContext.triggerNoteRefresh();
       }
 
       setIsSuccess(true);

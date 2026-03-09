@@ -9,8 +9,12 @@ export const authConfig = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || "",
+      clientId:
+        process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || "",
+      clientSecret:
+        process.env.GOOGLE_CLIENT_SECRET ||
+        process.env.AUTH_GOOGLE_SECRET ||
+        "",
     }),
     Credentials({
       name: "Credentials",
@@ -212,6 +216,7 @@ export const authConfig = {
   pages: {
     signIn: "/login",
     error: "/login", // Simplified error page
+    signOut: "/", // redirect to landing page
   },
 };
 

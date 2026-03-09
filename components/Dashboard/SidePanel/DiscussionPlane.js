@@ -8,6 +8,10 @@ import SortByPill from "./SortByPillBox";
 import JoinConversationButton from "./JoinConversationButton";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+<<<<<<< HEAD
+=======
+import { useDevotionalContext } from "@/contexts/DevotionalContext";
+>>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
 
 export default function DiscussionPlane({ week, day, userId, devotionalDataId, devotionalNumberId }) {
   const [selectedTab, setSelectedTab] = useState("comments"); // 'comments' or 'notes'
@@ -23,6 +27,11 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
   const [repliesData, setRepliesData] = useState({}); // { commentId: [replies] }
 
   const router = useRouter();
+<<<<<<< HEAD
+=======
+  const devotionalContext = useDevotionalContext();
+  const refreshNotesVersion = devotionalContext?.refreshNotesVersion;
+>>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
 
   // Fetch comments
   useEffect(() => {
@@ -61,7 +70,11 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
       }
     };
     fetchNotes();
+<<<<<<< HEAD
   }, [week, day]);
+=======
+  }, [week, day, refreshNotesVersion]);
+>>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
 
   // Sort function
   const sortItems = (items) => {
@@ -221,7 +234,11 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
           <div className="flex space-x-6 text-sm">
             <button 
               onClick={() => handleLike(item, type)}
+<<<<<<< HEAD
               className={`flex items-center space-x-1 hover:text-blue-500 ${item.hasLiked ? 'text-blue-600' : 'text-gray-600'}`}
+=======
+              className={`flex items-center space-x-1 hover:text-[#8B2A28] ${item.hasLiked ? 'text-[#8B2A28]' : 'text-gray-600'}`}
+>>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
             >
               <FaThumbsUp />
               <span>{item.likesCount || 0}</span>
@@ -230,7 +247,11 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
             {isComment && !isReply && (
               <button 
                 onClick={() => setReplyingTo(replyingTo === item.id ? null : item.id)}
+<<<<<<< HEAD
                 className="flex items-center space-x-1 text-gray-600 hover:text-blue-500"
+=======
+                className="flex items-center space-x-1 text-gray-600 hover:text-[#8B2A28]"
+>>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
               >
                 <FaReply />
                 <span>Reply</span>
@@ -240,7 +261,11 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
             {isComment && !isReply && item.repliesCount > 0 && (
               <button 
                 onClick={() => toggleReplies(item.id)}
+<<<<<<< HEAD
                 className="text-blue-500 hover:underline text-xs ml-auto"
+=======
+                className="text-[#8B2A28] hover:underline text-xs ml-auto"
+>>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
               >
                 {expandedReplies.has(item.id) ? 'Hide Replies' : `View ${item.repliesCount} Replies`}
               </button>
@@ -254,7 +279,11 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="Write a reply..."
+<<<<<<< HEAD
                 className="w-full p-2 text-sm border border-gray-300 rounded-md"
+=======
+                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B2A28] focus:border-transparent transition-all resize-none" 
+>>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
                 rows="2"
               />
               <div className="flex justify-end space-x-2">
@@ -266,7 +295,11 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
                 </button>
                 <button 
                   onClick={() => submitReply(item.id)}
+<<<<<<< HEAD
                   className="px-3 py-1 text-xs text-white bg-blue-500 rounded hover:bg-blue-600"
+=======
+                  className="px-3 py-1 text-xs text-white bg-[#8B2A28] rounded hover:bg-[#AF3634]"
+>>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
                 >
                   Post
                 </button>
@@ -317,6 +350,7 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
         
         <div className="flex items-center space-x-2">
           {selectedTab === "comments" || selectedTab === "notes" ? (
+<<<<<<< HEAD
             <JoinConversationButton 
               week={week} 
               day={day} 
@@ -338,6 +372,11 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
             />
           ) : null}
           <SortByPill onSortChange={setSortOption} />
+=======
+              <SortByPill onSortChange={setSortOption} />    
+          ) : null}
+        
+>>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
         </div>
       </div>
 
@@ -367,6 +406,26 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
           )
         )}
       </div>
+
+      <JoinConversationButton 
+              week={week} 
+              day={day} 
+              userId={userId}
+              devotionalDataId={devotionalDataId}
+              devotionalNumberId={devotionalNumberId}
+              onCommentAdded={(newItem, tabType) => {
+                if (tabType === "comment") {
+                  setComments(prev => [newItem, ...prev]);
+                  setSelectedTab("comments");
+                } else if (tabType === "note") {
+                  // If the Note submission returns valid reflection shape, push it, otherwise fetch
+                  if (newItem && newItem.id) {
+                    setNotes(prev => [newItem, ...prev]);
+                  }
+                  setSelectedTab("notes");
+                }
+              }} 
+            />
     </div>
   );
 }
