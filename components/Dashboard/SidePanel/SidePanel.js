@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { FaCheck, FaChevronDown, FaChevronRight } from "react-icons/fa";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { IoLockClosed } from "react-icons/io5";
+import { IoLockClosed, IoClose } from "react-icons/io5";
 import DiscussionSection from "./discussion-section";
 import {
   Tooltip,
@@ -197,9 +197,9 @@ export default function SidePanel() {
 
   const DrawerList = (
     <Box
-      sx={{ width: 400 }}
+      sx={{ width: { xs: '100vw', sm: 400 } }}
       role="presentation"
-      className="bg-gray-100 xs:w-full sm:w-full md:w-[320px] lg:w-[400px]"
+      className="bg-gray-100 h-full overflow-y-auto"
     >
       <div className="px-6 py-6">
         {/* Header */}
@@ -209,6 +209,12 @@ export default function SidePanel() {
               Devotional Progress
             </h2>
           </div>
+          <Button 
+            onClick={() => setOpen(false)} 
+            className="min-w-0 p-2 text-gray-500 hover:bg-gray-200 rounded-full"
+          >
+            <IoClose size={24} />
+          </Button>
         </div>
 
         {/* Progress List */}

@@ -14,6 +14,14 @@ export async function GET(request: Request) {
     console.log('Requested userId:', userId);
 
     let videos = await prisma.videoUpload.findMany({
+      include: {
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -91,6 +99,8 @@ export async function GET(request: Request) {
       fileType: String(video.fileType),
       blobUrl: normalizeBlobUrl(video.blobUrl),
       isPublic: Boolean(video.isPublic),
+      likesCount: video._count?.likes || 0,
+      commentsCount: video._count?.comments || 0,
       createdAt: video.createdAt ? new Date(video.createdAt).toISOString() : null,
       updatedAt: video.updatedAt ? new Date(video.updatedAt).toISOString() : null,
     }));
@@ -148,11 +158,11 @@ export async function GET(request: Request) {
     console.log('Returning videos from API - Total:', videosWithReadUrls.length);
     if (videosWithReadUrls.length > 0) {
       const sample = videosWithReadUrls[0];
-      console.log('Sample video being returned:', {
+      console.log('Final API Payload Sample:', {
         id: sample.id,
-        fileName: sample.fileName,
-        blobUrl: sample.blobUrl,
-        blobUrlType: typeof sample.blobUrl,
+        week: sample.week,
+        day: sample.day,
+        isPublic: sample.isPublic,
         blobUrlLength: sample.blobUrl ? sample.blobUrl.length : 0,
       });
     }

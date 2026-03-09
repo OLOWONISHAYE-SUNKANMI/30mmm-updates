@@ -120,11 +120,7 @@ export default function JoinConversationButton({ week, day, onCommentAdded, user
     <div>
       <button
         onClick={() => setIsModalOpen(true)}
-<<<<<<< HEAD
-        className="px-4 py-2 text-white bg-[#AF3634] rounded-md hover:bg-white hover:text-[#AF3634] hover:border-[#AF3634] hover:border-2"
-=======
         className="px-4 py-2 w-full text-white bg-[#AF3634] rounded-md hover:bg-white hover:text-[#AF3634] hover:border-[#AF3634] hover:border-2"
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
         disabled={!week || !day}
       >
         Join the Conversation

@@ -23,15 +23,8 @@ export async function GET(request: NextRequest) {
         // Fetch top level comments (parentId is null)
         const comments = await prisma.comment.findMany({
             where: {
-<<<<<<< HEAD
-                OR: [
-                    { week: { lt: week } },
-                    { week: week, day: { lte: day } }
-                ],
-=======
                 week: week,
                 day: day,
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
                 parentId: null
             },
             include: {
@@ -123,8 +116,4 @@ export async function POST(request: NextRequest) {
         console.error('Comment create error:', error);
         return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 });
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc

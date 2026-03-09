@@ -56,11 +56,14 @@ export async function getCurrentUserWithProgress() {
 
     // If user has progress, format it
     if (userProgress) {
+      // Calculate relative day from cumulative currentDay (1-35)
+      const relativeDay = ((userProgress.currentDay - 1) % 7) + 1;
+
       // Fetch the current devotional from MongoDB
       const currentDevotional = await prisma.devotional.findFirst({
         where: {
           week: userProgress.currentWeek,
-          day: userProgress.currentDay,
+          day: relativeDay,
         },
       });
 
@@ -92,19 +95,19 @@ export async function getCurrentUserWithProgress() {
       },
       progress: formattedProgress
         ? {
-            currentWeek: formattedProgress.currentWeek,
-            currentDay: formattedProgress.currentDay,
-            currentWeekTitle: formattedProgress.currentWeekTitle,
-            currentDayTitle: formattedProgress.currentDayTitle,
-            cohortNumber: formattedProgress.cohortNumber,
-            cohortRoman: formattedProgress.cohortRoman,
-            startDate: formattedProgress.startDate.toISOString(),
-            daysCompleted: formattedProgress.daysCompleted,
-            totalCompleted: formattedProgress.totalCompleted,
-            devotional: formattedProgress.devotional,
-            currentDevotionalId:
-              formattedProgress.devotional?.id?.toString() || null, // Add optional chaining
-          }
+          currentWeek: formattedProgress.currentWeek,
+          currentDay: formattedProgress.currentDay,
+          currentWeekTitle: formattedProgress.currentWeekTitle,
+          currentDayTitle: formattedProgress.currentDayTitle,
+          cohortNumber: formattedProgress.cohortNumber,
+          cohortRoman: formattedProgress.cohortRoman,
+          startDate: formattedProgress.startDate.toISOString(),
+          daysCompleted: formattedProgress.daysCompleted,
+          totalCompleted: formattedProgress.totalCompleted,
+          devotional: formattedProgress.devotional,
+          currentDevotionalId:
+            formattedProgress.devotional?.id?.toString() || null, // Add optional chaining
+        }
         : null,
     };
   } catch (error) {

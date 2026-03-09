@@ -9,6 +9,8 @@ import {
   ChevronUp,
   Heart,
   MessageCircle,
+  MoreVertical,
+  Play,
   Share2,
   User,
   Volume2,
@@ -17,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Tooltip,
   TooltipContent,
@@ -29,6 +32,10 @@ import { calculateWeekAndDay } from "@/lib/calculateWeekAndDay";
 
 export default function VideoPlayer() {
   const { authState } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const videoIdFromUrl = searchParams.get('videoId');
+
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -44,7 +51,7 @@ export default function VideoPlayer() {
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
-  const errorHandledRef = useRef<Set<number>>(new Set());
+  const errorHandledRef = useRef<Set<string>>(new Set());
 
   // Progress state
   const [currentUserProgress, setCurrentUserProgress] = useState<{
@@ -199,15 +206,17 @@ export default function VideoPlayer() {
             if (!video || !video.id) return false;
 
             // Filter by Progress:
-            // Show if video week is less than current progress week
-            // OR if video week is equal to current progress week AND video day is less than or equal to current progress day
-            const videoWeek = video.week || 0;
-            const videoDay = video.day || 0;
+            const videoWeek = Number(video.week) || 0;
+            const videoDay = Number(video.day) || 0;
 
             const isReleased =
               videoWeek < progressWeek ||
               (videoWeek === progressWeek && videoDay <= progressDay);
-            if (!isReleased) return false;
+
+            // Allow all if no progress found (e.g. initial load or error)
+            const shouldInclude = !progressWeek ? true : isReleased;
+
+            if (!shouldInclude) return false;
 
             const normalizedBlobUrl = normalizeBlobUrl(video.blobUrl);
 
@@ -261,6 +270,12 @@ export default function VideoPlayer() {
         }
 
         setVideos(validVideos);
+
+        // Find initial video index based on URL
+        if (videoIdFromUrl) {
+          const index = validVideos.findIndex(v => v.id === videoIdFromUrl);
+          if (index !== -1) setCurrentVideoIndex(index);
+        }
 
         // Initialize stats for each valid video
         const initialStats: {
@@ -422,6 +437,13 @@ export default function VideoPlayer() {
     }
   }, [currentVideoIndex, showComments]);
 
+  // Sync URL when video changes
+  useEffect(() => {
+    if (currentVideo && (currentVideo as any).id !== videoIdFromUrl) {
+      router.replace(`/dashboard/videos/player?videoId=${(currentVideo as any).id}`, { scroll: false });
+    }
+  }, [currentVideoIndex]);
+
   if (loading) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-[900px] flex-col items-center justify-center">
@@ -451,419 +473,184 @@ export default function VideoPlayer() {
 
   return (
     <TooltipProvider>
-      <div className="mx-auto flex min-h-screen w-full max-w-[900px] flex-col px-2 xs:px-3 sm:px-4 md:px-6">
-        {/* Video Player Container - Responsive height */}
-        <div
-          className="m-1 h-[40vh] w-full overflow-hidden rounded-lg border border-gray-200 xs:m-2 xs:h-[45vh] sm:h-[55vh] md:h-[60vh] lg:h-[65vh] xl:h-[70vh]"
-          ref={containerRef}
-        >
-          {/* Video container - completely clean */}
-          <div className="relative h-full w-full">
-            {validVideos.map((video, index) => (
-              <div
-                key={video.id}
-                className={`absolute left-0 top-0 h-full w-full transition-opacity duration-300 ${index === currentVideoIndex
-                  ? "z-10 opacity-100"
-                  : "z-0 opacity-0"
-                  }`}
-              >
-                {video.blobUrl &&
-                typeof video.blobUrl === "string" &&
-                video.blobUrl.length > 0 ? (
-                  <video
-                    ref={(el) => {
-                      videoRefs.current[index] = el;
-                    }}
-                    className="h-full w-full object-cover"
-                    src={video.blobUrl}
-                    loop
-                    playsInline
-                    muted={isMuted}
-                    controls={true}
-                    preload="metadata"
-                    aria-label={`Video: Week ${video.week} Day ${video.day}`}
-                    onError={(e) => {
-                      const videoId = video.id;
+      <div className="mx-auto flex min-h-screen w-full max-w-[1400px] flex-col lg:flex-row gap-6 px-4 py-8">
+        {/* Main Content Area (Left/Center) */}
+        <div className="flex-1 flex flex-col space-y-6">
 
-                      // Prevent duplicate error handling
-                      if (errorHandledRef.current.has(videoId)) return;
-                      errorHandledRef.current.add(videoId);
+          {/* Video Player Container */}
+          <div
+            className="relative aspect-video w-full overflow-hidden rounded-xl bg-black shadow-lg"
+            ref={containerRef}
+          >
+            {currentVideo ? (
+              <video
+                ref={(el) => {
+                  if (el) videoRefs.current[currentVideoIndex] = el;
+                }}
+                className="w-full h-full object-contain"
+                src={`${currentVideo.blobUrl || currentVideo.url || currentVideo.videoUrl || currentVideo.file || ""}#t=0.001`}
+                autoPlay
+                controls
+                playsInline
+                muted={isMuted}
+                onEnded={goToNextVideo}
+                onError={(e) => {
+                  console.error("Video player error:", e);
+                }}
+              />
+            ) : (
+              <div className="text-white">Video not found.</div>
+            )}
+          </div>
 
-                      const error = e.currentTarget.error;
-                      console.warn(`Video error for ${videoId}:`, {
-                        code: error?.code,
-                        message: error?.message,
-                        blobUrl: video.blobUrl,
-                      });
+          {/* Title & Stats Bar */}
+          <div className="space-y-4">
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">
+              Week {currentVideo?.week || '?'} Day {currentVideo?.day || '?'}: {(currentVideo?.firstName || currentVideo?.fileName || 'Anonymous')} {currentVideo?.lastName || ''}'s Submission
+            </h1>
 
-                      setBrokenVideoIds((prev) => {
-                        const newSet = new Set(prev);
-                        newSet.add(videoId);
-                        return newSet;
-                      });
-                    }}
-                  />
-                ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gray-100">
-                    <p className="font-semibold text-gray-600">
-                      Video Cannot Load
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {video.fileName
-                        ? `File: ${video.fileName}`
-                        : "No video file available"}
-                    </p>
-                    <p className="max-w-xs text-center text-xs text-gray-400">
-                      {video.blobUrl
-                        ? `URL: ${video.blobUrl.substring(0, 100)}...`
-                        : "No URL provided"}
-                    </p>
-                  </div>
-                )}
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-red-100 shadow-sm">
+                  <AvatarFallback className="bg-red-50 text-red-700 font-bold">
+                    {currentVideo?.firstName?.[0]}{currentVideo?.lastName?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-bold text-gray-900">{currentVideo?.firstName} {currentVideo?.lastName}</div>
+                  <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">Cohort {currentVideo?.cohort}</div>
+                </div>
+                <Button variant="outline" className="ml-4 rounded-full border-red-200 text-red-700 hover:bg-red-50 font-bold px-6">Follow</Button>
               </div>
-            ))}
+
+              <div className="flex items-center gap-1 sm:gap-2">
+                <div className="flex items-center bg-gray-100 rounded-full">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`rounded-l-full gap-2 px-4 hover:bg-gray-200 transition-colors ${currentVideo && likedVideos.includes(currentVideo.id) ? "text-red-500" : ""}`}
+                    onClick={() => toggleLike(currentVideo?.id)}
+                  >
+                    <Heart size={18} className={currentVideo && likedVideos.includes(currentVideo.id) ? "fill-current" : ""} />
+                    <span className="font-bold">{currentStats.likes}</span>
+                  </Button>
+                  <div className="w-[1px] h-6 bg-gray-300" />
+                  <Button variant="ghost" size="sm" className="rounded-r-full px-4 hover:bg-gray-200 transition-colors">
+                    <Share2 size={18} />
+                  </Button>
+                </div>
+
+                <Button
+                  variant="secondary"
+                  className="rounded-full gap-2 font-bold bg-gray-100 hover:bg-gray-200"
+                  onClick={() => toggleBookmark(currentVideo?.id)}
+                >
+                  <Bookmark size={18} className={currentVideo && bookmarkedVideos.includes(currentVideo.id) ? "fill-current" : ""} />
+                  Save
+                </Button>
+
+                <Button variant="secondary" className="rounded-full bg-gray-100 hover:bg-gray-200">
+                  <MoreVertical size={18} />
+                </Button>
+              </div>
+            </div>
+
+            {/* Description area */}
+            <div className="bg-gray-100 rounded-xl p-4 text-sm text-gray-700">
+              <div className="font-bold mb-1">Uploaded {currentVideo && new Date(currentVideo.createdAt).toLocaleDateString()}</div>
+              <p className="whitespace-pre-wrap">{currentVideo?.description || "A clean, intentional submission for the 30MMM program."}</p>
+            </div>
+          </div>
+
+          {/* Comments Section */}
+          <div className="mt-8">
+            <h3 className="text-lg font-black mb-6 flex items-center gap-2">
+              <MessageCircle size={20} className="text-red-600" />
+              {currentStats.comments} Comments
+            </h3>
+
+            <div className="flex gap-4 mb-8">
+              <Avatar className="h-10 w-10 flex-shrink-0">
+                <AvatarFallback>{authState.user?.name?.[0] || 'U'}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 flex flex-col gap-2">
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  className="w-full border-b border-gray-300 focus:border-red-600 focus:outline-none py-1 bg-transparent text-sm"
+                  onKeyPress={(e) => e.key === "Enter" && addComment()}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" className="rounded-full text-xs" onClick={() => setNewComment("")}>Cancel</Button>
+                  <Button size="sm" className="rounded-full px-6 text-xs bg-red-600 hover:bg-red-700 font-bold" onClick={addComment}>Comment</Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {loadingComments ? (
+                <div className="flex justify-center py-4 text-gray-400"><div className="animate-spin mr-2">/</div>Loading...</div>
+              ) : comments.map((comment: any, index) => (
+                <div key={comment.id || index} className="flex gap-4">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback>{comment.userId?.[0] || '?'}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-bold text-gray-900">{comment.userId}</span>
+                      <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-sm text-gray-700">{comment.text}</p>
+                    <div className="flex items-center gap-4 mt-2">
+                      <button className="text-xs text-gray-500 hover:text-red-600 font-medium">Reply</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* All Content Below Video - Uses remaining viewport */}
-        <div className="flex flex-1 flex-col px-2 pb-2 xs:px-3 xs:pb-4 sm:px-4 md:px-6">
-          {/* Fixed Navigation Controls */}
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white py-1 xs:py-2 sm:py-4">
-            {/* Previous Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full border border-gray-300 px-1 py-1 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 xs:px-2 sm:px-4 sm:py-2"
-                  onClick={goToPreviousVideo}
-                  disabled={currentVideoIndex === 0}
-                  aria-label="Previous video"
-                >
-                  <ChevronUp className="mr-0 h-3 w-3 xs:mr-1 xs:h-4 xs:w-4 sm:mr-2 sm:h-5 sm:w-5" />
-                  <span className="hidden text-xs sm:inline sm:text-sm">
-                    Previous
-                  </span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Previous Video</p>
-              </TooltipContent>
-            </Tooltip>
-
-            {/* Video Progress Indicators */}
-            <div
-              className="scrollbar-hide flex max-w-[80px] gap-0.5 overflow-x-auto px-1 xs:max-w-[120px] xs:gap-1 sm:max-w-[200px] sm:gap-3 sm:px-2 md:max-w-md"
-              role="tablist"
-              aria-label="Video navigation"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            >
-              {validVideos.map((video, index) => (
-                <Tooltip key={index}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => setCurrentVideoIndex(index)}
-                      className={`h-1.5 w-4 flex-shrink-0 rounded-full transition-all duration-200 xs:h-2 xs:w-6 sm:h-3 sm:w-10 ${
-                        index === currentVideoIndex
-                          ? "bg-gray-800"
-                          : "bg-gray-300 hover:bg-gray-500"
-                      }`}
-                      role="tab"
-                      aria-selected={index === currentVideoIndex}
-                      aria-label={`Go to video ${index + 1}: Week ${video.week} Day ${video.day}`}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      Video {index + 1}: Week {video.week} Day {video.day}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-            </div>
-
-            {/* Next Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full border border-gray-300 px-1 py-1 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 xs:px-2 sm:px-4 sm:py-2"
-                  onClick={goToNextVideo}
-                  disabled={currentVideoIndex === validVideos.length - 1}
-                  aria-label="Next video"
-                >
-                  <span className="hidden text-xs sm:inline sm:text-sm">
-                    Next
-                  </span>
-                  <ChevronDown className="ml-0 h-3 w-3 xs:ml-1 xs:h-4 xs:w-4 sm:ml-2 sm:h-5 sm:w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Next Video</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
-          {/* Scrollable Content */}
-          <div className="flex-1 space-y-2 overflow-y-auto xs:space-y-3 sm:space-y-4">
-            {/* Video Title and Info */}
-            <div className="px-2 text-center">
-              <div className="text-base font-bold leading-tight text-gray-800 xs:text-lg sm:text-xl md:text-2xl">
-                Week {currentVideo?.week} Day {currentVideo?.day}
-              </div>
-              <div className="mt-1 text-xs text-gray-600 xs:text-sm sm:mt-2 sm:text-base">
-                {currentVideo?.firstName} {currentVideo?.lastName} • Cohort{" "}
-                {currentVideo?.cohort}
-              </div>
-            </div>
-
-            {/* Video Controls and Profile */}
-            <div className="flex flex-wrap items-center justify-between gap-2 px-2">
-              {/* Mute/Unmute button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={toggleMute}
-                    className="rounded-full px-2 py-1 text-xs xs:px-3 xs:text-sm sm:px-4 sm:py-2"
-                    aria-label={isMuted ? "Unmute video" : "Mute video"}
-                  >
-                    {isMuted ? (
-                      <VolumeX
-                        size={14}
-                        className="xs:h-4 xs:w-4 sm:h-[18px] sm:w-[18px]"
-                      />
-                    ) : (
-                      <Volume2
-                        size={14}
-                        className="xs:h-4 xs:w-4 sm:h-[18px] sm:w-[18px]"
-                      />
-                    )}
-                    <span className="ml-1 sm:ml-2">
-                      {isMuted ? "Unmute" : "Mute"}
-                    </span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{isMuted ? "Unmute" : "Mute"}</p>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* Profile */}
-              <div className="flex items-center gap-1 xs:gap-2 sm:gap-3">
-                <Avatar className="h-6 w-6 border-2 border-gray-300 xs:h-8 xs:w-8 sm:h-10 sm:w-10 md:h-12 md:w-12">
-                  <AvatarFallback className="text-xs xs:text-sm">
-                    {currentVideo?.firstName?.[0]}
-                    {currentVideo?.lastName?.[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="text-xs text-gray-600 xs:text-sm">
-                  {currentVideo?.firstName} {currentVideo?.lastName}
-                </div>
-              </div>
-            </div>
-
-            {/* Interaction Buttons */}
-            <div className="flex items-center justify-center gap-2 px-2 xs:gap-4 sm:gap-6 md:gap-10">
-              {/* Like */}
-              <div className="flex flex-col items-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full text-gray-700 hover:bg-red-50 hover:text-red-500 xs:h-10 xs:w-10 sm:h-12 sm:w-12 md:h-14 md:w-14"
-                      onClick={() => toggleLike(currentVideo?.id)}
-                      aria-label={
-                        currentVideo && likedVideos.includes(currentVideo.id)
-                          ? "Unlike video"
-                          : "Like video"
-                      }
-                    >
-                      <Heart
-                        className={`h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 ${currentVideo && likedVideos.includes(currentVideo.id) ? "fill-red-500 text-red-500" : "fill-transparent"}`}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {currentVideo && likedVideos.includes(currentVideo.id)
-                        ? "Unlike"
-                        : "Like"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-                <span className="mt-0.5 text-xs font-semibold text-gray-700 xs:mt-1 xs:text-sm">
-                  {currentStats.likes}
-                </span>
-              </div>
-
-              {/* Comments */}
-              <div className="flex flex-col items-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full text-gray-700 hover:bg-blue-50 hover:text-blue-500 xs:h-10 xs:w-10 sm:h-12 sm:w-12 md:h-14 md:w-14"
-                      onClick={() => {
-                        setShowComments(!showComments);
-                        if (!showComments && currentVideo) {
-                          loadComments(currentVideo.id);
-                        }
-                      }}
-                    >
-                      <MessageCircle className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Comments</p>
-                  </TooltipContent>
-                </Tooltip>
-                <span className="mt-0.5 text-xs font-semibold text-gray-700 xs:mt-1 xs:text-sm">
-                  {currentStats.comments}
-                </span>
-              </div>
-              {/* Comments */}
-              <div className="flex flex-col items-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full text-gray-700 hover:bg-blue-50 hover:text-blue-500 xs:h-10 xs:w-10 sm:h-12 sm:w-12 md:h-14 md:w-14"
-                      onClick={() => {
-                        setShowComments(!showComments);
-                        if (!showComments && currentVideo) {
-                          loadComments(currentVideo.id);
-                        }
-                      }}
-                    >
-                      <MessageCircle className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Comments</p>
-                  </TooltipContent>
-                </Tooltip>
-                <span className="mt-0.5 text-xs font-semibold text-gray-700 xs:mt-1 xs:text-sm">
-                  {currentStats.comments}
-                </span>
-              </div>
-
-              {/* Bookmark */}
-              <div className="flex flex-col items-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full text-gray-700 hover:bg-yellow-50 hover:text-yellow-500 xs:h-10 xs:w-10 sm:h-12 sm:w-12 md:h-14 md:w-14"
-                      onClick={() => toggleBookmark(currentVideo?.id)}
-                      aria-label={
-                        currentVideo &&
-                        bookmarkedVideos.includes(currentVideo.id)
-                          ? "Remove bookmark"
-                          : "Bookmark video"
-                      }
-                    >
-                      <Bookmark
-                        className={`h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 ${currentVideo && bookmarkedVideos.includes(currentVideo.id) ? "fill-yellow-500 text-yellow-500" : "fill-transparent"}`}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {currentVideo &&
-                      bookmarkedVideos.includes(currentVideo.id)
-                        ? "Remove Bookmark"
-                        : "Bookmark"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-                <span className="mt-0.5 text-xs font-semibold text-gray-700 xs:mt-1 xs:text-sm">
-                  0
-                </span>
-              </div>
-
-              {/* Share */}
-            </div>
-
-            {/* Video Info */}
-            <div className="px-2 text-center text-gray-600">
-              <div className="text-xs xs:text-sm">
-                Uploaded:{" "}
-                {currentVideo &&
-                  new Date(currentVideo.createdAt).toLocaleDateString()}
-              </div>
-              <div className="break-all text-xs xs:text-sm">
-                File: {currentVideo?.fileName}
-              </div>
-            </div>
-
-            <div className="text-center text-sm text-gray-500">
-              Video {currentVideoIndex + 1} of {videos.length}
-            </div>
-
-            {/* Comments Section */}
-            {showComments && (
-              <div className="mx-2 rounded-lg bg-gray-50 p-2 xs:p-3 sm:p-4">
-                <h3 className="mb-2 text-sm font-semibold xs:mb-3 xs:text-base">
-                  Comments
-                </h3>
-
-                {/* Add Comment */}
-                <div className="mb-3 flex gap-1 xs:mb-4 xs:gap-2">
-                  <input
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment..."
-                    className="flex-1 rounded-lg border px-2 py-1 text-xs xs:px-3 xs:py-2 xs:text-sm sm:text-base"
-                    onKeyPress={(e) => e.key === "Enter" && addComment()}
+        {/* Side List Area (Right) */}
+        <div className="lg:w-[400px] flex flex-col gap-4">
+          <h3 className="font-black text-gray-900 uppercase tracking-widest text-xs mb-2">Related Submissions</h3>
+          <div className="flex flex-col gap-3 max-h-[1200px] overflow-y-auto px-1 custom-scrollbar">
+            {validVideos.map((video, index) => (
+              <div
+                key={video.id}
+                className={`flex gap-3 group cursor-pointer p-1 rounded-lg transition-colors ${index === currentVideoIndex ? "bg-red-50" : "hover:bg-gray-100"}`}
+                onClick={() => setCurrentVideoIndex(index)}
+              >
+                <div className="relative w-40 aspect-video rounded-md overflow-hidden bg-gray-900 flex-shrink-0">
+                  <video
+                    src={`${video.blobUrl || video.url || video.videoUrl || video.file || ""}#t=0.001`}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-full object-cover pointer-events-none opacity-80"
                   />
-                  <Button
-                    onClick={addComment}
-                    size="sm"
-                    className="px-2 text-xs xs:px-3 xs:text-sm"
-                  >
-                    Post
-                  </Button>
-                </div>
-
-                {/* Comments List */}
-                <div className="max-h-24 space-y-2 overflow-y-auto xs:max-h-32 xs:space-y-3 sm:max-h-40">
-                  {loadingComments ? (
-                    <div className="flex justify-center py-3 xs:py-4">
-                      <div className="h-3 w-3 animate-spin rounded-full border-b-2 border-gray-600 xs:h-4 xs:w-4 sm:h-6 sm:w-6"></div>
-                      <span className="ml-2 text-xs text-gray-600 xs:text-sm">
-                        Loading comments...
-                      </span>
+                  <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] px-1 rounded font-bold">W{video.week}D{video.day}</div>
+                  {index === currentVideoIndex && (
+                    <div className="absolute inset-0 bg-red-600/20 flex items-center justify-center">
+                      <Play size={16} className="text-white fill-current" />
                     </div>
-                  ) : (
-                    Array.isArray(comments) &&
-                    comments.map((comment: any, index: number) => (
-                      <div
-                        key={comment.id || index}
-                        className="rounded bg-white p-2 xs:p-3"
-                      >
-                        <div className="text-xs font-medium xs:text-sm">
-                          {comment.userId}
-                        </div>
-                        <div className="text-xs text-gray-700 xs:text-sm">
-                          {comment.text}
-                        </div>
-                        <div className="mt-1 text-xs text-gray-500">
-                          {new Date(comment.createdAt).toLocaleString()}
-                        </div>
-                      </div>
-                    ))
                   )}
                 </div>
+                <div className="flex flex-col gap-1 overflow-hidden">
+                  <h4 className={`text-sm font-bold line-clamp-2 leading-tight ${index === currentVideoIndex ? "text-red-700" : "text-gray-900"}`}>
+                    Week {video.week || '?'} Day {video.day || '?'}: {(video.firstName || video.fileName || 'Anonymous')} {video.lastName || ''}
+                  </h4>
+                  <p className="text-[11px] text-gray-500 font-medium">Cohort {video.cohort}</p>
+                  <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                    <span>{video.likesCount || 0} likes</span>
+                    <span>•</span>
+                    <span>{new Date(video.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
               </div>
-            )}
+            ))}
           </div>
         </div>
       </div>

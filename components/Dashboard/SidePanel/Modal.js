@@ -44,11 +44,7 @@ export default function Modal({ isOpen, onClose, onSubmit, isSubmitting }) {
           <button
             className={`pb-2 px-1 font-medium transition-colors border-b-2 ${
               activeTab === "comment"
-<<<<<<< HEAD
-                ? "border-blue-500 text-blue-600"
-=======
                 ? "border-[#8B2A28] text-[#AF3634]"
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
             onClick={() => setActiveTab("comment")}
@@ -58,11 +54,7 @@ export default function Modal({ isOpen, onClose, onSubmit, isSubmitting }) {
           <button
             className={`pb-2 px-1 font-medium transition-colors border-b-2 ${
               activeTab === "note"
-<<<<<<< HEAD
-                ? "border-blue-500 text-blue-600"
-=======
                 ? "border-[#8B2A28] text-[#AF3634]"
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
             onClick={() => setActiveTab("note")}
@@ -82,11 +74,7 @@ export default function Modal({ isOpen, onClose, onSubmit, isSubmitting }) {
                 ? "Share your thoughts on today's devotional..."
                 : "Write your reflection note for today..."
             }
-<<<<<<< HEAD
-            className="w-full p-4 text-sm md:text-base bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-=======
             className="w-full p-4 text-sm md:text-base bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B2A28] focus:border-transparent transition-all resize-none"
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
             required
             disabled={isSubmitting}
           ></textarea>
@@ -102,11 +90,7 @@ export default function Modal({ isOpen, onClose, onSubmit, isSubmitting }) {
           <button
             type="submit"
             disabled={isSubmitting}
-<<<<<<< HEAD
-            className="px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-300 transition-colors shadow-sm"
-=======
             className="px-5 py-2 text-sm font-medium text-white bg-[#AF3634] rounded-md hover:bg-[#8B2A28] disabled:bg-[#AF3634] transition-colors shadow-sm"
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
           >
             {isSubmitting 
               ? "Submitting..." 

@@ -58,15 +58,8 @@ export async function GET(request: NextRequest) {
         // Fetch public reflections for the specific day
         const reflections = await prisma.reflectionResponse.findMany({
             where: {
-<<<<<<< HEAD
-                OR: [
-                    { week: { lt: week } },
-                    { week: week, day: { lte: day } }
-                ],
-=======
                 week: week,
                 day: day,
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
                 isPublic: true // ONLY public
             },
             include: {
@@ -109,8 +102,5 @@ export async function GET(request: NextRequest) {
         console.error('Reflections fetch error:', error);
         return NextResponse.json({ error: 'Failed to fetch reflections' }, { status: 500 });
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
+

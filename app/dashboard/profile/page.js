@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import Link from "next/link";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -10,17 +9,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Heart, MessageCircle, Eye, EyeOff, Trash2 } from "lucide-react";
 
 export default function Settings() {
   const { authState } = useAuth();
-  const [firstTabActive, setFirstTabActive] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState("posts");
   const [loading, setLoading] = useState(true);
   const [videos, setVideos] = useState([]);
   const [videosLoading, setVideosLoading] = useState(true);
   const [reflections, setReflections] = useState([]);
   const [reflectionsLoading, setReflectionsLoading] = useState(true);
-  const [showUploads, setShowUploads] = useState(false);
-  const [selectedReflection, setSelectedReflection] = useState(null); // For modal
+  const [selectedReflection, setSelectedReflection] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
@@ -46,12 +46,9 @@ export default function Settings() {
           const response = await fetch(`/api/create-profile`);
           if (response.ok) {
             const data = await response.json();
-            console.log('Profile data received:', data);
             if (data.profile) {
-              // Use image from API response or fallback to authState
               const userImage = data.user?.image || authState.user?.image;
               if (userImage && typeof userImage === 'string') {
-                console.log('Setting image preview to:', userImage);
                 setImagePreview(userImage);
               }
               setFormData({
@@ -80,14 +77,12 @@ export default function Settings() {
       }
     };
 
-    // Set image from authState immediately if available
     if (authState.user?.image && !imagePreview) {
       setImagePreview(authState.user.image);
     }
 
     fetchProfile();
     
-    // fetch user's videos
     const fetchVideos = async () => {
       if (authState.isAuthenticated && authState.user?.id) {
         setVideosLoading(true);
@@ -95,21 +90,10 @@ export default function Settings() {
           const res = await fetch(`/api/videos?userId=${authState.user.id}`);
           if (res.ok) {
             const data = await res.json();
-            
-            if (!Array.isArray(data)) {
-              console.error('Videos data is not an array:', data && data.message ? data.message : data);
-              setVideos([]);
-              return;
-            }
-            
-            setVideos(data);
-          } else {
-            console.error('Failed to fetch videos:', res.status, res.statusText);
-            setVideos([]);
+            if (Array.isArray(data)) setVideos(data);
           }
         } catch (error) {
-          console.error("Error fetching videos:", error?.message || error);
-          setVideos([]);
+          console.error("Error fetching videos:", error);
         } finally {
           setVideosLoading(false);
         }
@@ -120,17 +104,10 @@ export default function Settings() {
       if (authState.isAuthenticated && authState.user?.id) {
         setReflectionsLoading(true);
         try {
-          // Fetch user's own text responses.
-          // Note: GET /api/reflections?userId=... doesn't filter purely by isPublic in the backend logic anymore if we pass userId? 
-          // Wait, the API GET /api/reflections?userId=X only returns isPublic=true. I need to get ALL of the user's responses for their profile.
-          // Actually, let's fix the API to return all for the owner, or I'll just adjust the UI to use the existing data if it's there.
-          // In /api/reflections/route.ts, we currently fixed it to GET public ones. Let's send a request and see what we get.
           const res = await fetch(`/api/reflections?userId=${authState.user.id}&all=true`); 
           if (res.ok) {
             const data = await res.json();
-            if (Array.isArray(data)) {
-              setReflections(data);
-            }
+            if (Array.isArray(data)) setReflections(data);
           }
         } catch (error) {
           console.error("Error fetching reflections:", error);
@@ -199,6 +176,53 @@ export default function Settings() {
     }
   };
 
+  const toggleVisibility = async (item) => {
+    try {
+      const newVisibility = !item.isPublic;
+      const endpoint = item.type === 'video' ? `/api/videos/${item.id}` : `/api/reflections/${item.id}`;
+      
+      const response = await fetch(endpoint, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublic: newVisibility }),
+      });
+
+      if (response.ok) {
+        // Update local state
+        const updateState = (prev) => prev.map(i => i.id === item.id ? { ...i, isPublic: newVisibility } : i);
+        if (item.type === 'video') setVideos(updateState);
+        else setReflections(updateState);
+        toast.success(`Post is now ${newVisibility ? 'public' : 'private'}`);
+      } else {
+        toast.error("Failed to update visibility");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    }
+  };
+
+  const deleteItem = async (item) => {
+    if (!window.confirm("Are you sure you want to delete this post? This action cannot be undone.")) return;
+
+    try {
+      const endpoint = item.type === 'video' ? `/api/videos/${item.id}` : `/api/reflections/${item.id}`;
+      const response = await fetch(endpoint, { method: "DELETE" });
+
+      if (response.ok) {
+        // Update local state
+        const filterState = (prev) => prev.filter(i => i.id !== item.id);
+        if (item.type === 'video') setVideos(filterState);
+        else setReflections(filterState);
+        toast.success("Post deleted successfully");
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to delete post");
+      }
+    } catch (error) {
+      toast.error("An error occurred while deleting");
+    }
+  };
+
   const getInitials = () => {
     if (formData.firstName && formData.lastName) {
       return `${formData.firstName[0]}${formData.lastName[0]}`.toUpperCase();
@@ -212,522 +236,246 @@ export default function Settings() {
     );
   };
 
+  const [firstTabActive, setFirstTabActive] = useState(true);
+
   if (authState.loading || loading) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-[900px] flex-col items-center justify-center">
         <div className="text-center">
           <div className="relative w-16 h-16 mx-auto mb-6">
             <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-primary-red border-t-transparent animate-spin"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-[#8B2A28] border-t-transparent animate-spin"></div>
           </div>
-          <p className="text-descriptions-grey text-lg font-medium">Loading profile...</p>
+          <p className="text-gray-500 text-lg font-medium">Loading profile...</p>
         </div>
       </div>
     );
   }
 
+  const allSubmissions = [...videos.map(v => ({ ...v, type: 'video' })), ...reflections.map(r => ({ ...r, type: 'text' }))].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
   return (
-    <>
-      <div className="flex min-h-screen w-full flex-col items-center justify-start gap-2 2xs:gap-3 px-2 2xs:px-4">
-        <h1 className="mt-16 2xs:mt-18 xs:mt-20 text-center text-2xl 2xs:text-3xl xs:text-4xl font-semibold">
-          Edit Profile
-        </h1>
-        <div className="relative">
+    <div className="mx-auto min-h-screen w-full max-w-[935px] flex flex-col pt-16 sm:pt-20 px-4 mb-20">
+      {/* Instagram Header */}
+      <div className="flex flex-row items-center mb-10 gap-8 sm:gap-12 pl-4 sm:pl-10">
+        <div className="flex-shrink-0 relative">
           {imagePreview && typeof imagePreview === 'string' && imagePreview.trim() !== '' ? (
             <img
               src={imagePreview}
               alt="Profile"
-              className="size-32 xs:size-36 sm:size-40 rounded-full object-cover border-4 border-white shadow-lg"
-              onError={(e) => {
-                console.error('Image failed to load');
-                setImagePreview(null);
-              }}
-              onLoad={() => console.log('Image loaded successfully')}
+              className="w-20 h-20 sm:w-36 sm:h-36 rounded-full object-cover border border-gray-200 shadow-sm"
             />
           ) : (
-            <div className="grid size-32 xs:size-36 sm:size-40 items-center justify-center rounded-full bg-rose-600 border-4 border-white shadow-lg">
-              <span className="text-5xl xs:text-6xl sm:text-7xl font-extrabold tracking-wider text-white">
+            <div className="flex w-20 h-20 sm:w-36 sm:h-36 items-center justify-center rounded-full bg-[#8B2A28] border border-gray-200 shadow-sm">
+              <span className="text-2xl sm:text-5xl font-extrabold text-white">
                 {getInitials()}
               </span>
             </div>
           )}
         </div>
-        <label className="text-sm 2xs:text-base font-semibold tracking-tight text-primary-red hover:scale-95 cursor-pointer">
-          Upload Picture
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="hidden"
-          />
-        </label>
-        <div className="flex min-h-[200px] w-full max-w-4xl flex-col items-center px-2 2xs:px-4">
-          <div className="items-stetch my-2 inline-flex min-h-max flex-row justify-between gap-x-1 2xs:gap-x-2 xs:gap-x-3 overflow-y-hidden rounded-2xl 2xs:rounded-3xl bg-gray-bg p-0.5 text-center">
+
+        <div className="flex flex-col flex-grow">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+            <h1 className="text-xl sm:text-2xl font-light text-gray-800">
+              {formData.firstName} {formData.lastName}
+            </h1>
             <button
-              onClick={() => setFirstTabActive(true)}
-              className={`h-full w-full text-nowrap rounded-2xl 2xs:rounded-3xl px-1 2xs:px-2 py-1.5 2xs:py-2 text-[10px] 2xs:text-xs font-light hover:bg-almost-black hover:font-medium hover:text-white active:bg-almost-black active:font-medium active:text-white ${firstTabActive ? "bg-almost-black font-medium text-white" : ""}`}
+              onClick={() => setIsEditing(!isEditing)}
+              className="px-4 py-1.5 border border-gray-300 rounded-md text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-colors w-full sm:w-auto"
             >
-              Personal Information
-            </button>
-            <button
-              onClick={() => setFirstTabActive(false)}
-              className={`h-full w-full text-nowrap rounded-2xl 2xs:rounded-3xl px-1 2xs:px-2 py-1.5 2xs:py-2 text-[10px] 2xs:text-xs font-light hover:bg-almost-black hover:font-medium hover:text-white active:bg-almost-black active:font-medium active:text-white ${firstTabActive ? "" : "bg-almost-black font-medium text-white"}`}
-            >
-              Address
+              {isEditing ? "View Profile" : "Edit Profile"}
             </button>
           </div>
-          <form
-            onSubmit={handleSubmit}
-            className="text-sm 2xs:text-base my-2 2xs:my-3 grid h-min w-full flex-auto grid-cols-1 content-baseline items-center gap-y-1.5 2xs:gap-y-2 font-normal sm:grid-cols-2"
-          >
-            {!!firstTabActive && (
-              <>
-                <label
-                  htmlFor="firstName"
-                  className="block px-2 2xs:px-4 xs:px-6 sm:px-8"
-                >
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    className="mt-1 w-full rounded-xl 2xs:rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0 text-sm 2xs:text-base py-2 2xs:py-3"
-                    placeholder="First Name"
-                  />
-                </label>
-                <label
-                  htmlFor="lastName"
-                  className="block px-2 2xs:px-4 xs:px-6 sm:px-8"
-                >
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-xl 2xs:rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0 text-sm 2xs:text-base py-2 2xs:py-3"
-                    placeholder="Last Name"
-                  />
-                </label>
-                <label
-                  htmlFor="birthDate"
-                  className="block px-2 2xs:px-4 xs:px-6 sm:px-8"
-                >
-                  <input
-                    type="date"
-                    name="birthDate"
-                    value={formData.birthDate}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-xl 2xs:rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0 text-sm 2xs:text-base py-2 2xs:py-3"
-                    placeholder="12-25-1979"
-                  />
-                </label>
-                <label
-                  htmlFor="maritalStatus"
-                  className="block px-2 2xs:px-4 xs:px-6 sm:px-8"
-                >
-                  <input
-                    type="text"
-                    name="maritalStatus"
-                    value={formData.maritalStatus}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-xl 2xs:rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0 text-sm 2xs:text-base py-2 2xs:py-3"
-                    placeholder="Marital Status"
-                  />
-                </label>
-                <label
-                  htmlFor="childrenCount"
-                  className="block px-2 2xs:px-4 xs:px-6 sm:px-8"
-                >
-                  <input
-                    type="number"
-                    name="childrenCount"
-                    value={formData.childrenCount}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-xl 2xs:rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0 text-sm 2xs:text-base py-2 2xs:py-3"
-                    placeholder="Number of Children"
-                  />
-                </label>
-                <label
-                  htmlFor="churchAffiliation"
-                  className="block px-8"
-                >
-                  <input
-                    type="text"
-                    name="churchAffiliation"
-                    value={formData.churchAffiliation}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0"
-                    placeholder="Church Affiliation"
-                  />
-                </label>
-              </>
-            )}
-            {/* Second Tab */}
-            {!firstTabActive && (
-              <>
-                <label
-                  htmlFor="email"
-                  className="block px-8"
-                >
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0"
-                    placeholder="Email"
-                  />
-                </label>
-                <label
-                  htmlFor="phoneNumber"
-                  className="block px-8"
-                >
-                  <input
-                    type="text"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0"
-                    placeholder="Phone Number"
-                  />
-                </label>
-                <label
-                  htmlFor="address"
-                  className="block px-8"
-                >
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0"
-                    placeholder="Street Address"
-                  />
-                </label>
-                <label
-                  htmlFor="city"
-                  className="block px-8"
-                >
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0"
-                    placeholder="City"
-                  />
-                </label>
-                <label
-                  htmlFor="state"
-                  className="block px-8"
-                >
-                  <input
-                    type="text"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0"
-                    placeholder="State"
-                  />
-                </label>
-                <label
-                  htmlFor="zipcode"
-                  className="block px-8"
-                >
-                  <input
-                    type="text"
-                    name="zipcode"
-                    value={formData.zipcode}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-2xl border-transparent bg-formfield focus:border-white focus:bg-teal-50 focus:ring-0"
-                    placeholder="Zip Code"
-                  />
-                </label>
-              </>
-            )}
-          </form>
+
+          <div className="flex gap-6 sm:gap-10 mb-4 text-sm sm:text-base">
+            <div><span className="font-semibold">{allSubmissions.length}</span> posts</div>
+          </div>
+
+          <div className="text-sm">
+            <p className="font-semibold">{formData.firstName} {formData.lastName}</p>
+            <p className="text-gray-600">{formData.churchAffiliation || "Member of 30MMM Program"}</p>
+          </div>
+        </div>
+      </div>
+
+      {isEditing ? (
+        <div className="flex flex-col items-center w-full">
+          <label className="text-sm font-semibold text-[#8B2A28] cursor-pointer mb-6 hover:underline">
+            Change Profile Photo
+            <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+          </label>
           
-          <div className="items-stetch my-2 inline-flex min-h-max w-full flex-row gap-x-2 2xs:gap-x-3 rounded-2xl 2xs:rounded-3xl px-2 2xs:px-4 xs:px-6 sm:px-8 max-sm:order-2 max-sm:flex-col max-sm:gap-1.5">
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="peer-hover:saturate[0.1] peer w-full rounded-xl 2xs:rounded-2xl border-2 border-primary-red py-2 2xs:py-3 text-sm 2xs:text-base text-primary-red transition-all hover:scale-[.98] hover:bg-primary-red hover:text-white"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="peer w-full rounded-xl 2xs:rounded-2xl bg-primary-red py-2 2xs:py-3 text-sm 2xs:text-base text-white transition-all hover:scale-[.98] hover:border-2 hover:border-primary-red hover:bg-white hover:text-primary-red disabled:opacity-50 peer-hover:saturate-[0.1]"
-            >
-              {loading ? "Saving..." : "Save"}
-            </button>
+          <div className="flex my-4 rounded-3xl bg-gray-100 p-1">
+            <button onClick={() => setFirstTabActive(true)} className={`px-6 py-2 rounded-2xl text-xs transition-all ${firstTabActive ? "bg-white shadow-sm font-semibold" : "text-gray-500"}`}>Personal Information</button>
+            <button onClick={() => setFirstTabActive(false)} className={`px-6 py-2 rounded-2xl text-xs transition-all ${!firstTabActive ? "bg-white shadow-sm font-semibold" : "text-gray-500"}`}>Address</button>
           </div>
 
-          {/* Toggle for Display Submissions on Profile */}
-          <div className="w-full max-w-4xl mt-6 px-2 2xs:px-4">
-            <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                <div>
-                  <div className="font-semibold text-sm 2xs:text-base">Display submissions on Profile</div>
-                  <div className="text-xs text-gray-500">Your submissions are visible to others</div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowUploads(!showUploads)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showUploads ? 'bg-primary-red' : 'bg-gray-300'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showUploads ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
+          <form onSubmit={handleSubmit} className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            {firstTabActive ? (
+              <>
+                <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" placeholder="First Name" />
+                <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" placeholder="Last Name" />
+                <input type="date" name="birthDate" value={formData.birthDate} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" />
+                <input type="text" name="maritalStatus" value={formData.maritalStatus} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" placeholder="Marital Status" />
+                <input type="number" name="childrenCount" value={formData.childrenCount} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" placeholder="Number of Children" />
+                <input type="text" name="churchAffiliation" value={formData.churchAffiliation} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" placeholder="Church Affiliation" />
+              </>
+            ) : (
+              <>
+                <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" placeholder="Email" />
+                <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" placeholder="Phone Number" />
+                <input type="text" name="address" value={formData.address} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" placeholder="Street Address" />
+                <input type="text" name="city" value={formData.city} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" placeholder="City" />
+                <input type="text" name="state" value={formData.state} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" placeholder="State" />
+                <input type="text" name="zipcode" value={formData.zipcode} onChange={handleInputChange} className="p-3 rounded-lg bg-gray-50 border-transparent focus:bg-white focus:border-[#8B2A28] focus:ring-1 focus:ring-[#8B2A28] transition-all" placeholder="Zip Code" />
+              </>
+            )}
+            <div className="sm:col-span-2 flex gap-4 mt-6">
+              <button disabled={loading} type="submit" className="flex-grow py-3 bg-[#8B2A28] text-white rounded-xl font-semibold hover:bg-[#AF3634] transition-all disabled:opacity-50">{loading ? "Saving..." : "Save Changes"}</button>
+              <button type="button" onClick={() => setIsEditing(false)} className="px-8 py-3 bg-gray-200 text-gray-800 rounded-xl font-semibold hover:bg-gray-300 transition-all">Cancel</button>
             </div>
+          </form>
+        </div>
+      ) : (
+        <>
+          {/* Tabs */}
+          <div className="flex justify-center border-t border-gray-200 uppercase tracking-widest text-xs font-semibold">
+            <button onClick={() => setActiveTab("posts")} className={`flex items-center gap-2 py-4 mr-12 transition-all border-t -mt-[1px] ${activeTab === "posts" ? "border-black text-black" : "border-transparent text-gray-400"}`}>
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M21,3H3A2,2,0,0,0,1,5V19a2,2,0,0,0,2,2H21a2,2,0,0,0,2-2V5A2,2,0,0,0,21,3ZM21,19H3V5H21ZM7,7h4v4H7Zm6,0h4v4H13ZM7,13h4v4H7Zm6,0h4v4H13Z"/></svg>
+              Posts
+            </button>
+            <button onClick={() => setActiveTab("reels")} className={`flex items-center gap-2 py-4 transition-all border-t -mt-[1px] ${activeTab === "reels" ? "border-black text-black" : "border-transparent text-gray-400"}`}>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Reels
+            </button>
           </div>
 
-          {/* User uploads */}
-          {showUploads && (
-            <div className="w-full max-w-4xl mt-6 px-2 2xs:px-4">
-              <div className="flex items-center gap-2 mb-4">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                </svg>
-                <h2 className="text-lg 2xs:text-xl font-semibold">My Submissions</h2>
-                <span className="text-sm text-gray-500">({videos.length + reflections.length})</span>
-              </div>
-              {(videosLoading || reflectionsLoading) ? (
-                <p>Loading submissions...</p>
-              ) : (videos.length === 0 && reflections.length === 0) ? (
-                <p className="text-sm text-gray-500">You haven't submitted any responses yet.</p>
-              ) : (
-              <TooltipProvider>
-                <div className="flex flex-col gap-6">
-                  {videos.length > 0 && (
-                    <div>
-                      <h3 className="text-md font-semibold mb-3 border-b pb-2 text-gray-800">Video Submissions ({videos.length})</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {videos.map((v) => (
-                    <div key={v.id} className="rounded-lg overflow-hidden border bg-white shadow-sm hover:shadow-md transition-shadow relative group">
-                      {v.blobUrl && (
-                        <video 
-                          className="w-full aspect-video object-cover bg-gray-100" 
-                          controls
-                          preload="metadata"
-                          playsInline
-                          onError={(e) => {
-                            console.error(`Video load error for: ${v.fileName}`);
-                          }}
-                        >
-                          <source src={v.blobUrl} type={v.fileType || "video/mp4"} />
-                          <source src={v.blobUrl} type="video/webm" />
-                          <source src={v.blobUrl} type="video/ogg" />
-                          Your browser does not support the video tag.
-                        </video>
-                      )}
-                      {!v.blobUrl && (
-                        <div className="w-full aspect-video bg-gray-200 flex items-center justify-center">
-                          <p className="text-sm text-gray-500">Video unavailable</p>
+          {/* Post Grid */}
+          {(activeTab === "posts" || activeTab === "reels") && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mt-2">
+              {(activeTab === "posts" 
+                ? allSubmissions.filter(i => i.type === 'text') 
+                : allSubmissions.filter(i => i.type === 'video')
+              ).map((item) => (
+                <div 
+                  key={`${item.type}-${item.id}`} 
+                  className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300"
+                  onClick={() => item.type === 'text' ? setSelectedReflection(item) : null}
+                >
+                  {/* Content Area */}
+                  <div className="w-full h-full relative">
+                    {item.type === 'video' ? (
+                      <>
+                        <video className="w-full h-full object-cover" muted src={item.blobUrl} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+                        
+                        {/* Persistent Info Overlay */}
+                        <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white drop-shadow-md">
+                          <span className="text-[10px] sm:text-xs font-bold truncate pr-2">
+                            {item.firstName} {item.lastName}
+                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0 bg-black/30 backdrop-blur-md px-1.5 py-0.5 rounded-full text-[10px]">
+                            <Heart className="w-2.5 h-2.5 fill-white" /> {item.likesCount || 0}
+                          </div>
                         </div>
-                      )}
-                      <div className="absolute top-2 right-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              onClick={async (e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                try {
-                                  const response = await fetch(`/api/videos/${v.id}`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ isPublic: !v.isPublic })
-                                  });
-                                  if (response.ok) {
-                                    const newIsPublic = !v.isPublic;
-                                    setVideos(prev => prev.map(video => 
-                                      video.id === v.id ? { ...video, isPublic: newIsPublic } : video
-                                    ));
-                                    toast.success(newIsPublic !== false
-                                      ? "Video is now public and visible on the dashboard"
-                                      : "Video is now hidden from the dashboard"
-                                    );
-                                  }
-                                } catch (error) {
-                                  console.error('Error toggling visibility:', error);
-                                }
-                              }}
-                              className="p-2 bg-white/90 rounded-full hover:bg-white shadow-md transition-all"
-                            >
-                              {v.isPublic !== false ? (
-                                <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                              ) : (
-                                <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                </svg>
-                              )}
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{v.isPublic !== false ? "Make video private" : "Make video public"}</p>
-                          </TooltipContent>
-                        </Tooltip>
 
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              onClick={async (e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (confirm('Are you sure you want to delete this video?')) {
-                                  try {
-                                    const response = await fetch(`/api/videos/${v.id}`, { method: 'DELETE' });
-                                    if (response.ok) {
-                                      setVideos(prev => prev.filter(video => video.id !== v.id));
-                                    }
-                                  } catch (error) {
-                                    console.error('Error deleting video:', error);
-                                  }
-                                }
-                              }}
-                              className="p-2 bg-white/90 rounded-full hover:bg-red-50 shadow-md transition-all"
-                            >
-                              <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Delete video</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="p-3">
-                        <div className="font-medium text-sm truncate mb-1 text-red-700 uppercase tracking-wider text-[10px] font-bold">Video Submission</div>
-                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
-                          Week {v.week} Day {v.day}
+                        {/* Top Right Icons */}
+                        <div className="absolute top-2 right-2 flex gap-1.5">
+                          <svg className="w-4 h-4 text-white drop-shadow-md" fill="currentColor" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full p-4 sm:p-6 flex flex-col justify-between bg-gray-50 border border-gray-100 relative">
+                        {/* Top Section: Badge */}
+                        <div className="flex justify-start">
+                          <span className="px-2 py-0.5 rounded-md bg-white border border-gray-200 text-[8px] sm:text-[10px] uppercase tracking-wider font-bold text-gray-500 shadow-sm">
+                            Day {item.day} • Week {item.week}
+                          </span>
+                        </div>
+
+                        {/* Middle Section: Quote Content */}
+                        <div className="flex-grow flex items-center justify-center py-2 px-2 sm:px-4">
+                          <p className="text-gray-700 font-medium leading-relaxed line-clamp-4 text-xs sm:text-sm italic">
+                            "{item.response}"
+                          </p>
+                        </div>
+                        
+                        {/* Bottom Section: Signature & Stats */}
+                        <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-200/50">
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[8px] text-gray-600 font-bold">
+                              {formData.firstName?.[0]}{formData.lastName?.[0]}
+                            </div>
+                            <span className="text-[10px] font-medium text-gray-400 truncate max-w-[80px]">
+                              {formData.firstName} {formData.lastName}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1.5 text-gray-300">
+                             <Heart className="w-3 h-3 fill-gray-100" />
+                             <span className="text-[10px] font-bold">{item.likesCount || 0}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                  
+                  {/* Persistent Admin Controls Barrier */}
+                  <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-20">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); toggleVisibility(item); }}
+                            className={`p-1.5 rounded-lg shadow-lg backdrop-blur-md transition-all ${
+                              item.isPublic 
+                                ? 'bg-white/90 text-gray-700 hover:bg-white' 
+                                : 'bg-red-500/90 text-white hover:bg-red-500'
+                            }`}
+                          >
+                            {item.isPublic ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          {item.isPublic ? "Visible (Public)" : "Hidden (Private)"}
+                        </TooltipContent>
+                      </Tooltip>
 
-                  {/* Text Reflections */}
-                  {reflections.length > 0 && (
-                    <div>
-                      <h3 className="text-md font-semibold mb-3 border-b pb-2 text-gray-800 mt-2">Text Submissions ({reflections.length})</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {reflections.map((r) => (
-                          <div key={r.id} className="rounded-lg overflow-hidden border bg-white shadow-sm hover:shadow-md transition-shadow relative group cursor-pointer" onClick={() => setSelectedReflection(r)}>
-                      <div className="w-full aspect-video bg-gray-50 p-4 overflow-hidden relative">
-                        <svg className="w-8 h-8 text-gray-300 absolute top-4 right-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
-                        <p className="text-sm text-gray-700 italic line-clamp-4">"{r.response}"</p>
-                      </div>
-                      
-                      <div className="absolute top-2 right-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              onClick={async (e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                try {
-                                  const response = await fetch(`/api/reflections/${r.id}`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ isPublic: !r.isPublic })
-                                  });
-                                  if (response.ok) {
-                                    const newIsPublic = !r.isPublic;
-                                    setReflections(prev => prev.map(ref => 
-                                      ref.id === r.id ? { ...ref, isPublic: newIsPublic } : ref
-                                    ));
-                                    toast.success(newIsPublic !== false
-                                      ? "Response is now public and visible on the dashboard"
-                                      : "Response is now hidden from the dashboard"
-                                    );
-                                  }
-                                } catch (error) {
-                                  console.error('Error toggling visibility:', error);
-                                }
-                              }}
-                              className="p-2 bg-white/90 rounded-full hover:bg-white shadow-md transition-all"
-                            >
-                              {r.isPublic !== false ? (
-                                <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                              ) : (
-                                <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                </svg>
-                              )}
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{r.isPublic !== false ? "Make response private" : "Make response public"}</p>
-                          </TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              onClick={async (e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (confirm('Are you sure you want to delete this text response?')) {
-                                  try {
-                                    const response = await fetch(`/api/reflections/${r.id}`, { method: 'DELETE' });
-                                    if (response.ok) {
-                                      setReflections(prev => prev.filter(ref => ref.id !== r.id));
-                                    }
-                                  } catch (error) {
-                                    console.error('Error deleting reflection:', error);
-                                  }
-                                }
-                              }}
-                              className="p-2 bg-white/90 rounded-full hover:bg-red-50 shadow-md transition-all"
-                            >
-                              <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Delete response</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="p-3">
-<<<<<<< HEAD:app/Dashboard/profile/page.js
-                        <div className="font-medium text-sm truncate mb-1 text-blue-700 uppercase tracking-wider text-[10px] font-bold">Text Submission</div>
-=======
-                        <div className="font-medium text-sm truncate mb-1 text-[#8B2A28] uppercase tracking-wider text-[10px] font-bold">Text Submission</div>
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc:app/dashboard/profile/page.js
-                        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
-                          Week {r.week} Day {r.day}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                      </div>
-                    </div>
-                  )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); deleteItem(item); }}
+                            className="p-1.5 bg-white/90 text-gray-700 hover:bg-red-50 rounded-lg shadow-lg backdrop-blur-md hover:text-red-600 transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">Delete Permanent</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
-              </TooltipProvider>
+              ))}
+              {((activeTab === "posts" && !allSubmissions.some(i => i.type === 'text')) || 
+                (activeTab === "reels" && !allSubmissions.some(i => i.type === 'video'))) && (
+                <div className="col-span-full py-24 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-50 mb-4">
+                    <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  </div>
+                  <h3 className="text-gray-900 font-bold">No {activeTab} yet</h3>
+                  <p className="text-gray-500 text-sm mt-1 uppercase tracking-widest text-[10px]">Your journey is just beginning</p>
+                </div>
               )}
             </div>
           )}
-        </div>
-      </div>
+
+          {activeTab !== "posts" && activeTab !== "reels" && (
+            <div className="py-20 text-center text-gray-400">
+              <p className="text-xl font-light">Nothing to see here yet</p>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Full Text Response Modal */}
       {selectedReflection && (
@@ -760,6 +508,6 @@ export default function Settings() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

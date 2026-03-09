@@ -1,23 +1,15 @@
 "use client";
 
-<<<<<<< HEAD
-import React, { createContext, useContext, useState } from 'react';
-=======
 import React, { createContext, useContext, useState, useCallback } from 'react';
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
 
 const DevotionalContext = createContext({
   week: null,
   day: null,
   devotionalDataId: null,
   devotionalNumberId: null,
-<<<<<<< HEAD
-  setContext: () => {},
-=======
   refreshNotesVersion: 0,
   setContext: () => {},
   triggerNoteRefresh: () => {},
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
 });
 
 export function DevotionalProvider({ children }) {
@@ -27,15 +19,6 @@ export function DevotionalProvider({ children }) {
     devotionalDataId: null,
     devotionalNumberId: null
   });
-<<<<<<< HEAD
-
-  const setContext = (week, day, devotionalDataId, devotionalNumberId) => {
-    setContextState({ week, day, devotionalDataId, devotionalNumberId });
-  };
-
-  return (
-    <DevotionalContext.Provider value={{ ...context, setContext }}>
-=======
   
   const [refreshNotesVersion, setRefreshNotesVersion] = useState(0);
 
@@ -49,7 +32,6 @@ export function DevotionalProvider({ children }) {
 
   return (
     <DevotionalContext.Provider value={{ ...context, refreshNotesVersion, setContext, triggerNoteRefresh }}>
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
       {children}
     </DevotionalContext.Provider>
   );
@@ -57,8 +39,4 @@ export function DevotionalProvider({ children }) {
 
 export function useDevotionalContext() {
   return useContext(DevotionalContext);
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> a469c3c221f469a63598086c4907ef57ad7919fc
