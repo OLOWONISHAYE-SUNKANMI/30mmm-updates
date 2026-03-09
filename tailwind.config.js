@@ -165,6 +165,7 @@ module.exports = {
     require("@tailwindcss/container-queries"),
     require("@tailwindcss/typography"),
     require("@tailwindcss/aspect-ratio"),
+    require("@tailwindcss/line-clamp"),
     require("tailwindcss-animate"),
   ],
 };

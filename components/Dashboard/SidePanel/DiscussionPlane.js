@@ -322,7 +322,6 @@ export default function DiscussionPlane({ week, day, userId, devotionalDataId, d
           {selectedTab === "comments" || selectedTab === "notes" ? (
               <SortByPill onSortChange={setSortOption} />    
           ) : null}
-        
         </div>
       </div>
 
