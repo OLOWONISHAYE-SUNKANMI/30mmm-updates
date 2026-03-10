@@ -7,18 +7,21 @@ import {
   Bookmark,
   ChevronDown,
   ChevronUp,
+  Flag,
   Heart,
   MessageCircle,
   MoreVertical,
   Play,
-  Share2,
-  User,
-  Volume2,
-  VolumeX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Tooltip,
@@ -27,6 +30,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { calculateWeekAndDay } from "@/lib/calculateWeekAndDay";
+import Image from "next/image";
 
 
 
@@ -50,7 +54,6 @@ export default function VideoPlayer() {
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
-  const [showShareMenu, setShowShareMenu] = useState(false);
   const errorHandledRef = useRef<Set<string>>(new Set());
 
   // Progress state
@@ -59,50 +62,6 @@ export default function VideoPlayer() {
     day: number;
   } | null>(null);
 
-  const shareVideo = async (platform: string) => {
-    if (!currentVideo) return;
-
-    const videoUrl = `${window.location.origin}/dashboard/videos?v=${currentVideo.id}`;
-    const title = `Check out this video: Week ${currentVideo.week} Day ${currentVideo.day}`;
-    const text = `${title} - ${currentVideo.description || "CLEAN Program Video"}`;
-
-    switch (platform) {
-      case "twitter":
-        window.open(
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(videoUrl)}`,
-          "_blank",
-        );
-        break;
-      case "facebook":
-        window.open(
-          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}`,
-          "_blank",
-        );
-        break;
-      case "whatsapp":
-        window.open(
-          `https://wa.me/?text=${encodeURIComponent(`${text} ${videoUrl}`)}`,
-          "_blank",
-        );
-        break;
-      case "copy":
-        try {
-          await navigator.clipboard.writeText(videoUrl);
-          toast.success("Link copied to clipboard!");
-        } catch (err) {
-          console.error("Failed to copy:", err);
-          const textArea = document.createElement("textarea");
-          textArea.value = videoUrl;
-          document.body.appendChild(textArea);
-          textArea.select();
-          document.execCommand("copy");
-          document.body.removeChild(textArea);
-          toast.success("Link copied to clipboard!");
-        }
-        break;
-    }
-    setShowShareMenu(false);
-  };
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -446,13 +405,24 @@ export default function VideoPlayer() {
 
   if (loading) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-[900px] flex-col items-center justify-center">
-        <div className="text-center">
-          <div className="relative mx-auto mb-6 h-16 w-16">
-            <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-            <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary-red border-t-transparent"></div>
+      <div className="mx-auto flex min-h-screen w-full flex-col items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-8">
+          {/* 30MMM Text Logo */}
+          <div className="relative">
+            <Image
+              src="/images-2/Thirty Mighty Men Ministries - text logo.png"
+              alt="30MMM Logo"
+              width={400}
+              height={100}
+              className="object-contain"
+            />
           </div>
-          <p className="text-descriptions-grey text-lg font-medium">Loading videos...</p>
+          {/* Spinning ring below logo */}
+          <div className="relative h-12 w-12">
+            <div className="absolute inset-0 rounded-full border-4 border-gray-100" />
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-red-600 border-t-transparent" />
+          </div>
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em] animate-pulse">Loading submission...</p>
         </div>
       </div>
     );
@@ -477,9 +447,10 @@ export default function VideoPlayer() {
         {/* Main Content Area (Left/Center) */}
         <div className="flex-1 flex flex-col space-y-6">
 
-          {/* Video Player Container */}
+          {/* Video Player Container — 9:16 portrait */}
           <div
-            className="relative aspect-video w-full overflow-hidden rounded-xl bg-black shadow-lg"
+            className="relative w-full max-w-[450px] overflow-hidden rounded-xl bg-black shadow-2xl"
+            style={{ aspectRatio: '9/16', maxHeight: '800px' }}
             ref={containerRef}
           >
             {currentVideo ? (
@@ -488,7 +459,7 @@ export default function VideoPlayer() {
                   if (el) videoRefs.current[currentVideoIndex] = el;
                 }}
                 className="w-full h-full object-contain"
-                src={`${currentVideo.blobUrl || currentVideo.url || currentVideo.videoUrl || currentVideo.file || ""}#t=0.001`}
+                src={currentVideo.blobUrl || currentVideo.url || currentVideo.videoUrl || currentVideo.file || ""}
                 autoPlay
                 controls
                 playsInline
@@ -499,7 +470,7 @@ export default function VideoPlayer() {
                 }}
               />
             ) : (
-              <div className="text-white">Video not found.</div>
+              <div className="flex items-center justify-center h-full text-white">Video not found.</div>
             )}
           </div>
 
@@ -520,38 +491,74 @@ export default function VideoPlayer() {
                   <div className="font-bold text-gray-900">{currentVideo?.firstName} {currentVideo?.lastName}</div>
                   <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">Cohort {currentVideo?.cohort}</div>
                 </div>
-                <Button variant="outline" className="ml-4 rounded-full border-red-200 text-red-700 hover:bg-red-50 font-bold px-6">Follow</Button>
+                {/* Follow — greyed out (coming soon) */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="ml-4">
+                        <Button
+                          variant="outline"
+                          disabled
+                          className="rounded-full border-gray-300 text-gray-400 font-bold px-6 opacity-50 cursor-not-allowed"
+                        >
+                          Follow
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Coming soon</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
 
               <div className="flex items-center gap-1 sm:gap-2">
-                <div className="flex items-center bg-gray-100 rounded-full">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`rounded-l-full gap-2 px-4 hover:bg-gray-200 transition-colors ${currentVideo && likedVideos.includes(currentVideo.id) ? "text-red-500" : ""}`}
-                    onClick={() => toggleLike(currentVideo?.id)}
-                  >
-                    <Heart size={18} className={currentVideo && likedVideos.includes(currentVideo.id) ? "fill-current" : ""} />
-                    <span className="font-bold">{currentStats.likes}</span>
-                  </Button>
-                  <div className="w-[1px] h-6 bg-gray-300" />
-                  <Button variant="ghost" size="sm" className="rounded-r-full px-4 hover:bg-gray-200 transition-colors">
-                    <Share2 size={18} />
-                  </Button>
-                </div>
-
+                {/* Like button — standalone pill */}
                 <Button
-                  variant="secondary"
-                  className="rounded-full gap-2 font-bold bg-gray-100 hover:bg-gray-200"
-                  onClick={() => toggleBookmark(currentVideo?.id)}
+                  variant="ghost"
+                  size="sm"
+                  className={`rounded-full gap-2 px-4 bg-gray-100 hover:bg-gray-200 transition-colors ${currentVideo && likedVideos.includes(currentVideo.id) ? "text-red-500" : ""
+                    }`}
+                  onClick={() => toggleLike(currentVideo?.id)}
                 >
-                  <Bookmark size={18} className={currentVideo && bookmarkedVideos.includes(currentVideo.id) ? "fill-current" : ""} />
-                  Save
+                  <Heart size={18} className={currentVideo && likedVideos.includes(currentVideo.id) ? "fill-current" : ""} />
+                  <span className="font-bold">{currentStats.likes}</span>
                 </Button>
 
-                <Button variant="secondary" className="rounded-full bg-gray-100 hover:bg-gray-200">
-                  <MoreVertical size={18} />
-                </Button>
+                {/* Save — greyed out (coming soon) */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          variant="secondary"
+                          disabled
+                          className="rounded-full gap-2 font-bold bg-gray-100 opacity-50 cursor-not-allowed"
+                        >
+                          <Bookmark size={18} />
+                          Save
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Coming soon</p></TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Three-dot menu with Report option */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" className="rounded-full bg-gray-100 hover:bg-gray-200">
+                      <MoreVertical size={18} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      className="text-red-600 gap-2 cursor-pointer"
+                      onClick={() => toast.info("Video reported. Thank you for your feedback.")}
+                    >
+                      <Flag size={15} />
+                      Report
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
